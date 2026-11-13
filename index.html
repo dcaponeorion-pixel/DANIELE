@@ -293,6 +293,35 @@
         .proc-txt span { font-size: 0.74rem; font-weight: 700; color: #667; }
         .proc-act { display: flex; gap: 6px; flex: none; flex-direction: column; }
         .proc-act .btn { margin: 0; padding: 6px 10px; font-size: 0.78rem; width: auto; text-decoration: none; text-align: center; display: block; }
+        /* ===== Allegati, letture, cambio turno, i miei turni ===== */
+        input[type=file] { width: 100%; padding: 10px; border: 2px dashed var(--border); border-radius: 8px; background: #fff; font-family: inherit; font-size: 0.9rem; }
+        .req-att { font-size: 0.86rem; font-weight: 800; margin-top: 6px; }
+        .link-btn { border: 0; background: none; color: var(--unieuro-blue); font-weight: 900; font-size: 0.86rem; cursor: pointer; padding: 2px 4px; font-family: inherit; text-decoration: underline; }
+        .ack-row { margin-top: 6px; font-size: 0.78rem; font-weight: 800; color: #1c7a34; }
+        .ack-btn { border: 2px solid var(--success); background: #fff; color: #1c7a34; border-radius: 8px; padding: 3px 10px; font-weight: 900; font-size: 0.8rem; cursor: pointer; font-family: inherit; }
+        .ack-btn:disabled { opacity: .6; }
+        .proc-cat { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .6px; color: #556; margin: 8px 0 2px; }
+        .proc-item { flex-wrap: wrap; }
+        .proc-item .ack-row { flex: 1 1 100%; margin-top: 0; }
+        .sub-h { font-size: 1rem; color: var(--unieuro-blue-dark); margin: 22px 0 10px; border-top: 2px solid #eee; padding-top: 14px; }
+        .swap-item { border: 2px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+        .swap-item.todo { border-color: var(--unieuro-orange); background: #fff8f2; }
+        .swap-top { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: center; font-weight: 900; }
+        .swap-meta { font-size: 0.86rem; font-weight: 700; color: #445; margin-top: 4px; }
+        .swap-act { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .swap-act .btn { width: auto; padding: 8px 14px; font-size: 0.9rem; margin: 0; }
+        #myShift { border: 2px solid var(--unieuro-blue); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; background: #f4f8ff; }
+        #myShift h3 { font-size: 1rem; color: var(--unieuro-blue-dark); margin-bottom: 8px; }
+        .ms-now { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .ms-chip { flex: 1 1 200px; background: #fff; border: 2px solid var(--unieuro-orange); border-radius: 10px; padding: 8px 10px; font-weight: 900; }
+        .ms-chip small { display: block; font-size: 0.72rem; color: #556; text-transform: uppercase; letter-spacing: .5px; }
+        .ms-chip.off { border-color: var(--success); }
+        .ms-week { font-size: 0.8rem; font-weight: 900; color: #445; margin: 8px 0 4px; }
+        .ms-tab { width: 100%; border-collapse: collapse; font-size: 0.86rem; background: #fff; }
+        .ms-tab td { border: 1px solid #c9d6ee; padding: 5px 8px; font-weight: 800; }
+        .ms-tab tr.today td { background: #fff4ec; }
+        .ms-tab td.h { text-align: right; width: 54px; }
+        .ms-tab td.d { white-space: nowrap; width: 110px; }
         .sch-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
         .sch-top select { width: auto; flex: 1 1 220px; margin: 0; }
         .sch-img-box { border: 3px solid #000; border-radius: 10px; overflow: hidden; background: #fff; cursor: zoom-in; }
@@ -372,6 +401,7 @@
                 <button type="button" class="tab active" data-tab="new">Nuova richiesta</button>
                 <button type="button" class="tab" data-tab="mine">Le mie richieste <span class="dot" id="mineBadge" hidden>0</span></button>
                 <button type="button" class="tab" data-tab="schedule">Orario <span class="dot" id="schBadge" hidden></span></button>
+                <button type="button" class="tab" data-tab="swap">Cambio turno <span class="dot" id="swapBadge" hidden></span></button>
             </div>
 
             <!-- NUOVA RICHIESTA -->
@@ -412,6 +442,14 @@
                             <label><input type="radio" name="slot" value="Pomeriggio"><span>Pomeriggio</span></label>
                         </div>
                     </div>
+                    <div class="form-group proto-group">
+                        <label for="reqProto">Numero di protocollo del certificato <span class="opt">(facoltativo)</span></label>
+                        <input type="text" name="protocol" id="reqProto" maxlength="40" inputmode="numeric" placeholder="es. 123456789">
+                    </div>
+                    <div class="form-group">
+                        <label for="reqFile">Allegato <span class="opt">(facoltativo: foto o PDF, es. il certificato)</span></label>
+                        <input type="file" id="reqFile" accept="image/*,application/pdf">
+                    </div>
                     <div class="form-group">
                         <label for="notes">Note <span class="opt">(facoltative)</span></label>
                         <textarea name="notes" id="notes" rows="3" maxlength="300" placeholder="Puoi lasciare vuoto"></textarea>
@@ -432,12 +470,35 @@
                 <div id="mineList"></div>
             </div>
 
+            <!-- CAMBIO TURNO -->
+            <div class="card tab-panel" id="panel-swap">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                    <h2 style="margin:0; border:0; padding:0;">Cambio turno</h2>
+                    <button type="button" class="btn btn-small btn-tool" id="refreshSwap">Aggiorna</button>
+                </div>
+                <p class="type-hint" style="margin-bottom:14px">Proponi a un collega di scambiarvi il turno. Lui accetta dalla sua app, poi l'amministratore approva: <b>il cambio vale solo dopo l'approvazione</b>.</p>
+                <div id="swapIn"></div>
+                <form id="swapForm" novalidate>
+                    <div class="form-row">
+                        <div class="form-group"><label for="swMy">Il mio turno del giorno</label><input type="date" id="swMy"></div>
+                        <div class="form-group"><label for="swTo">Collega</label><select id="swTo"></select></div>
+                    </div>
+                    <div class="form-group"><label for="swOther">In cambio del suo turno del giorno <span class="opt">(se è lo stesso giorno lascia vuoto)</span></label><input type="date" id="swOther"></div>
+                    <div class="form-group"><label for="swNote">Note <span class="opt">(facoltative)</span></label><input type="text" id="swNote" maxlength="250" placeholder="es. visita medica"></div>
+                    <button type="submit" class="btn" id="swSend">Proponi il cambio</button>
+                    <div id="swapMsg" class="msg" role="status"></div>
+                </form>
+                <h3 class="sub-h">Le mie proposte</h3>
+                <div id="swapMine"></div>
+            </div>
+
             <!-- ORARIO -->
             <div class="card tab-panel" id="panel-schedule">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
                     <h2 style="margin:0; border:0; padding:0;">Orario di lavoro</h2>
                     <button type="button" class="btn btn-small btn-tool" id="refreshSch">Aggiorna</button>
                 </div>
+                <div id="myShift" hidden></div>
                 <div class="sch-top" id="schTop" hidden>
                     <select id="schWeek" aria-label="Settimana"></select>
                     <button type="button" class="btn btn-small btn-tool" id="schZoom">Schermo intero</button>
@@ -474,6 +535,7 @@
         </div>
     </div>
 
+    <input type="file" id="attachPick" accept="image/*,application/pdf" hidden>
     <div id="toast" class="toast" hidden></div>
 
     <div class="sch-viewer" id="schViewer" hidden>
@@ -487,7 +549,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxTTVtoOC1SimcrRNcrMGOqLGtFWXLU9xB5pl1-fbHTpzfiACbLJ_xDdSvfJcNRnfsg/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyL9RhLcHyt8vB6fE_hC4-RawnOX1ZX4oNeaKsUJPUDuTn7kTWZyvIR1ICMs0izkvuB/exec";
 
         // Chiamata verso Google Script: prima via JSONP (tag script), se non va via fetch (piano B)
         function jsonpOnce(params, timeoutMs) {
@@ -552,6 +614,7 @@
             const single = type === 'Giorno Libero' || type === 'Permesso';
             f.querySelector('.end-group').hidden = single;
             f.querySelector('.slot-group').hidden = type !== 'Permesso';
+            const pg = f.querySelector('.proto-group'); if (pg) { pg.hidden = type !== 'Malattia'; if (type !== 'Malattia') pg.querySelector('input').value = ''; }
             f.querySelector('.start-lbl').textContent = single ? (type === 'Permesso' ? 'Giorno del permesso' : 'Giorno') : 'Primo giorno';
             f.querySelector('.type-hint').textContent = TYPE_HINT[type] || '';
             if (type !== 'Permesso') f.querySelectorAll('[name=slot]').forEach(x => { x.checked = false; });
@@ -653,10 +716,12 @@
             loadSchedule(true);
             loadMsgs(false);
             loadProcs(false);
+            loadSwaps(false);
+            loadMyShift();
         }
 
         function logout(message) {
-            session = null; myReqs = []; schWeeks = []; schCurrent = ''; schDataUrl = ''; msgs = []; procs = []; renderProcs();
+            session = null; myReqs = []; schWeeks = []; schCurrent = ''; schDataUrl = ''; msgs = []; procs = []; renderProcs(); mySwaps = []; myWeeks = []; renderMyShift(); $('swapBadge').hidden = true;
             document.body.classList.remove('logged'); $('msgBanner').hidden = true; renderMsgs();
             lsSet('hr_cred', null); ssSet('hr_cred_s', null);
             $('appView').style.display = 'none';
@@ -683,6 +748,8 @@
             $('panel-new').classList.toggle('active', tab === 'new');
             $('panel-mine').classList.toggle('active', tab === 'mine');
             $('panel-schedule').classList.toggle('active', tab === 'schedule');
+            $('panel-swap').classList.toggle('active', tab === 'swap');
+            if (tab === 'swap') loadSwaps(false);
             if (tab === 'mine') { markSeen(); }
             if (tab === 'schedule') { if (schCurrent) schMarkSeen(schCurrent); else loadSchedule(false); }
         }
@@ -726,14 +793,15 @@
         let msgs = [], msgLast = 0;
         function msgSeenKey() { return 'hr_msg_seen_' + (session ? session.name : ''); }
         function msgSeen() { return lsGet(msgSeenKey()) || '0'; }
-        function msgIsNew(m) { return Number(m.id) > Number(msgSeen()); }
+        function msgIsNew(m) { return !m.read && Number(m.id) > Number(msgSeen()); }
         function renderMsgs() {
             const box = $('msgList');
             if (!msgs.length) { box.innerHTML = '<div class="chat-empty">Nessun messaggio.</div>'; }
             else {
                 box.innerHTML = msgs.map(m => `<div class="bubble ${msgIsNew(m) ? 'new' : ''}">
                     <div class="bubble-meta"><span>${esc(m.at)}</span>${m.personal ? '<span class="tag me">solo per te</span>' : ''}${msgIsNew(m) ? '<span class="tag">nuovo</span>' : ''}</div>
-                    <div class="bubble-text">${esc(m.text)}</div></div>`).join('');
+                    <div class="bubble-text">${esc(m.text)}</div>
+                    <div class="ack-row">${m.read ? '✓ Letto il ' + esc(m.read) : `<button type="button" class="ack-btn" data-ack="msg:${esc(m.id)}">Ho letto</button>`}</div></div>`).join('');
                 box.scrollTop = box.scrollHeight;
             }
             const n = msgs.filter(msgIsNew).length;
@@ -763,21 +831,211 @@
         }
         $('refreshMsg').addEventListener('click', () => loadMsgs(true));
         $('msgBannerBtn').addEventListener('click', () => { $('msgCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-        document.addEventListener('visibilitychange', () => { if (!document.hidden && session && Date.now() - msgLast > 30000) { loadMsgs(false); loadProcs(false); } });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && session && Date.now() - msgLast > 30000) { loadMsgs(false); loadProcs(false); loadSwaps(false); loadMyShift(); } });
         setInterval(() => { if (!document.hidden && session && Date.now() - msgLast > 180000) loadMsgs(false); }, 60000);
+
+        /* ---------- Allegati alle richieste ---------- */
+        let pendingFile = null;
+        const ATT_MAX = 5 * 1024 * 1024;
+        function checkAttach(f) {
+            const isImg = /^image\//.test(f.type), isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+            if (!isImg && !isPdf) return 'L\'allegato deve essere una foto o un PDF.';
+            if (isPdf && f.size > ATT_MAX) return 'Il PDF è troppo grande: massimo 5 MB.';
+            return '';
+        }
+        function fileB64(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('lettura')); r.readAsDataURL(f); }); }
+        // le foto vengono rimpicciolite (lato lungo 1800 px) così si caricano in fretta anche dal telefono
+        function shrinkImage(f) {
+            return new Promise((res, rej) => {
+                const url = URL.createObjectURL(f), im = new Image();
+                im.onload = () => {
+                    const k = Math.min(1, 1800 / Math.max(im.naturalWidth, im.naturalHeight));
+                    const cv = document.createElement('canvas'); cv.width = Math.round(im.naturalWidth * k); cv.height = Math.round(im.naturalHeight * k);
+                    const c = cv.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, cv.width, cv.height); c.drawImage(im, 0, 0, cv.width, cv.height);
+                    URL.revokeObjectURL(url); res(cv.toDataURL('image/jpeg', 0.85).split(',')[1]);
+                };
+                im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('immagine non leggibile')); };
+                im.src = url;
+            });
+        }
+        function postForm(fields, maxWait) {
+            return new Promise(resolve => {
+                const name = 'pf_' + Date.now() + Math.floor(Math.random() * 1e4);
+                const ifr = document.createElement('iframe'); ifr.name = name; ifr.style.display = 'none';
+                const f = document.createElement('form');
+                f.method = 'POST'; f.action = SCRIPT_URL; f.target = name; f.acceptCharset = 'UTF-8'; f.style.display = 'none';
+                Object.keys(fields).forEach(k => { const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = fields[k]; f.appendChild(i); });
+                document.body.appendChild(ifr); document.body.appendChild(f);
+                let done = false;
+                const fin = () => { if (done) return; done = true; setTimeout(() => { f.remove(); ifr.remove(); }, 500); resolve(); };
+                f.submit(); ifr.onload = fin; setTimeout(fin, maxWait || 60000);
+            });
+        }
+        async function uploadAttach(id, f) {
+            try {
+                const isImg = /^image\//.test(f.type);
+                const data = isImg ? await shrinkImage(f) : await fileB64(f);
+                const tok = String(Date.now());
+                await postForm({ op: 'reqattach', name: session.name, pin: session.pin, id: id, mime: isImg ? 'image/jpeg' : 'application/pdf', data: data, tok: tok }, 90000);
+                for (let i = 0; i < 15; i++) {
+                    try {
+                        const d = await jsonp({ action: 'my', name: session.name, pin: session.pin }, 15000);
+                        if (d && d.ok && (d.requests || []).some(r => String(r.id) === String(id) && r.fileTok === tok)) return true;
+                    } catch (e) {}
+                    await new Promise(r => setTimeout(r, i < 2 ? 1000 : 2000));
+                }
+            } catch (err) {}
+            return false;
+        }
+        async function viewAttach(id) {
+            toast('Carico l\'allegato…', 4000);
+            try {
+                const d = await jsonp({ action: 'myattach', id: id, name: session.name, pin: session.pin }, 40000);
+                if (!d || !d.ok) { toast('Allegato non disponibile.'); return; }
+                const bin = atob(d.data), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+                const url = URL.createObjectURL(new Blob([u], { type: d.mime }));
+                if (/^image\//.test(d.mime)) { $('vImg').src = url; $('schViewer').hidden = false; viewerFit(); }
+                else { const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.download = d.name || 'allegato.pdf'; document.body.appendChild(a); a.click(); a.remove(); }
+                setTimeout(() => URL.revokeObjectURL(url), 120000);
+            } catch (err) { toast('Impossibile caricare l\'allegato.'); }
+        }
+        $('attachPick').addEventListener('change', async () => {
+            const f = $('attachPick').files[0], id = $('attachPick').dataset.id;
+            if (!f || !id) return;
+            const bad = checkAttach(f); if (bad) { toast(bad, 6000); return; }
+            setMsg($('mineMsg'), 'info', 'Carico l\'allegato…');
+            const ok = await uploadAttach(id, f);
+            setMsg($('mineMsg'), ok ? 'ok' : 'err', ok ? 'Allegato caricato.' : 'Allegato non caricato: controlla la connessione e riprova.');
+            setTimeout(() => setMsg($('mineMsg'), '', ''), 7000);
+            if (ok) loadMine(false);
+        });
+
+        /* ---------- Cambio turno ---------- */
+        let mySwaps = [], swapLast = 0;
+        const SW_PEER = 'In attesa del collega', SW_ADMIN = 'In attesa di approvazione';
+        function swBadge(s) { return s === 'Approvato' ? 'badge-approved' : (/Rifiutato/.test(s) ? 'badge-rejected' : 'badge-pending'); }
+        function renderSwaps() {
+            const me = session ? session.name : '';
+            const sel = $('swTo'), cur = sel.value;
+            const names = [...$('loginName').options].map(o => o.value).filter(n => n && n !== me);
+            sel.innerHTML = '<option value="">Scegli il collega…</option>' + names.map(n => `<option>${esc(n)}</option>`).join('');
+            if (names.indexOf(cur) >= 0) sel.value = cur;
+            const incoming = mySwaps.filter(s => s.to === me && s.status === SW_PEER);
+            const b = $('swapBadge'); b.textContent = incoming.length ? String(incoming.length) : ''; b.hidden = !incoming.length;
+            const item = (s, todo) => `<div class="swap-item ${todo ? 'todo' : ''}" data-sid="${esc(s.id)}">
+                <div class="swap-top"><span>${esc(s.from === me ? 'Tu' : s.from)} ⇄ ${esc(s.to === me ? 'Tu' : s.to)}</span><span class="badge ${swBadge(s.status)}">${esc(s.status)}</span></div>
+                <div class="swap-meta">${esc(s.from === me ? 'Tu cedi' : s.from + ' cede')} il turno del <b>${fmtDate(s.myDate)}</b> · ${esc(s.to === me ? 'tu cedi' : s.to + ' cede')} il turno del <b>${fmtDate(s.otherDate)}</b></div>
+                ${s.note ? `<div class="swap-meta">Note: ${esc(s.note)}</div>` : ''}${s.reason ? `<div class="swap-meta">Motivo: ${esc(s.reason)}</div>` : ''}
+                <div class="swap-act">${todo ? '<button type="button" class="btn btn-success" data-sw="yes">Accetto</button><button type="button" class="btn btn-danger" data-sw="no">Rifiuto</button>' : ''}
+                    ${s.from === me && (s.status === SW_PEER || s.status === SW_ADMIN) ? '<button type="button" class="btn btn-del" data-sw="cancel">Annulla la proposta</button>' : ''}</div></div>`;
+            $('swapIn').innerHTML = incoming.length ? '<h3 class="sub-h" style="border:0;margin-top:0;padding-top:0">Un collega ti chiede un cambio</h3>' + incoming.map(s => item(s, true)).join('') : '';
+            const rest = mySwaps.filter(s => !(s.to === me && s.status === SW_PEER)).slice().reverse();
+            $('swapMine').innerHTML = rest.length ? rest.map(s => item(s, false)).join('') : '<div class="empty">Nessun cambio turno.</div>';
+        }
+        async function loadSwaps(manual) {
+            if (!session) return;
+            try {
+                const d = await jsonp({ action: 'swaps', name: session.name, pin: session.pin }, 20000);
+                if (d && d.ok) { mySwaps = d.swaps || []; swapLast = Date.now(); renderSwaps(); }
+            } catch (err) { if (manual) toast('Impossibile caricare i cambi turno.'); }
+        }
+        $('refreshSwap').addEventListener('click', () => loadSwaps(true));
+        $('swapForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const my = $('swMy').value, to = $('swTo').value, other = $('swOther').value || my, note = $('swNote').value.trim();
+            const today = new Date(); const iso = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            if (!my) { setMsg($('swapMsg'), 'err', 'Scegli il giorno del tuo turno.'); return; }
+            if (!to) { setMsg($('swapMsg'), 'err', 'Scegli il collega.'); return; }
+            if (my < iso || other < iso) { setMsg($('swapMsg'), 'err', 'Le date devono essere da oggi in poi.'); return; }
+            const b = $('swSend'); b.disabled = true; b.textContent = 'Invio…'; setMsg($('swapMsg'), 'info', 'Invio della proposta…');
+            try {
+                const d = await jsonp({ action: 'swapnew', name: session.name, pin: session.pin, to, myDate: my, otherDate: other, note, id: String(Date.now()) }, 25000);
+                if (d && d.ok) { $('swapForm').reset(); setMsg($('swapMsg'), 'ok', 'Proposta inviata a ' + to + '. Riceverai la risposta qui.'); setTimeout(() => setMsg($('swapMsg'), '', ''), 8000); await loadSwaps(false); }
+                else setMsg($('swapMsg'), 'err', 'Non inviata: ' + ((d && d.error) || 'errore'));
+            } catch (err) { setMsg($('swapMsg'), 'err', 'Impossibile contattare il server. Riprova.'); }
+            b.disabled = false; b.textContent = 'Proponi il cambio';
+        });
+        $('panel-swap').addEventListener('click', async e => {
+            const b = e.target.closest('[data-sw]'); if (!b) return;
+            const id = b.closest('.swap-item').dataset.sid, act = b.dataset.sw;
+            if (act === 'cancel' && !confirm('Annullare questa proposta di cambio turno?')) return;
+            if (act === 'yes' && !confirm('Accetti il cambio turno? Dopo serve ancora l\'approvazione dell\'amministratore.')) return;
+            if (act === 'no' && !confirm('Rifiuti il cambio turno?')) return;
+            b.disabled = true;
+            try {
+                const d = await jsonp(act === 'cancel' ? { action: 'swapcancel', id, name: session.name, pin: session.pin } : { action: 'swapreply', id, answer: act, name: session.name, pin: session.pin }, 25000);
+                if (d && d.ok) { toast(act === 'yes' ? 'Hai accettato: ora decide l\'amministratore.' : (act === 'no' ? 'Hai rifiutato il cambio.' : 'Proposta annullata.'), 5000); await loadSwaps(false); }
+                else { toast('Operazione non riuscita: ' + ((d && d.error) || 'errore'), 6000); b.disabled = false; }
+            } catch (err) { toast('Impossibile contattare il server.'); b.disabled = false; }
+        });
+
+        /* ---------- I miei turni ---------- */
+        let myWeeks = [];
+        const GG = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+        function msHours(v) { const m = /^(\d{1,2}):(\d{2})\/(\d{1,2}):(\d{2})$/.exec(String(v || '')); if (!m) return 0; const a = +m[1] * 60 + +m[2], b = +m[3] * 60 + +m[4]; return b > a ? (b - a) / 60 : 0; }
+        function msText(w, v) { return (w.legend && w.legend[v]) || String(v || '').replace('/', '–'); }
+        function msDay(w, i) {
+            const c = w.days[i] || ['', ''], a = msText(w, c[0]), b = msText(w, c[1]);
+            return { a, b, off: msHours(c[0]) + msHours(c[1]) === 0, h: msHours(c[0]) + msHours(c[1]), text: a === b ? a : a + ' / ' + b };
+        }
+        function isoAdd(iso, n) { const p = iso.split('-').map(Number), d = new Date(p[0], p[1] - 1, p[2] + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+        function renderMyShift() {
+            const box = $('myShift');
+            if (!myWeeks.length) { box.hidden = true; box.innerHTML = ''; return; }
+            const n = new Date(), today = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'), tomorrow = isoAdd(today, 1);
+            const find = iso => { for (const w of myWeeks) for (let i = 0; i < 7; i++) if (isoAdd(w.week, i) === iso) return msDay(w, i); return null; };
+            const chip = (lab, d) => d ? `<div class="ms-chip ${d.off ? 'off' : ''}"><small>${lab}</small>${esc(d.text)}</div>` : '';
+            const fh = x => String(Math.round(x * 100) / 100).replace('.', ',');
+            let h = '<h3>I miei turni</h3><div class="ms-now">' + chip('Oggi', find(today)) + chip('Domani', find(tomorrow)) + '</div>';
+            myWeeks.forEach(w => {
+                let tot = 0, rows = '';
+                for (let i = 0; i < 7; i++) {
+                    const iso = isoAdd(w.week, i), d = msDay(w, i), p = iso.split('-'); tot += d.h;
+                    const dn = GG[new Date(+p[0], +p[1] - 1, +p[2]).getDay()];
+                    rows += `<tr class="${iso === today ? 'today' : ''}"><td class="d">${dn} ${p[2]}/${p[1]}</td><td>${esc(d.text)}</td>${w.hours ? `<td class="h">${d.h ? fh(d.h) + ' h' : ''}</td>` : ''}</tr>`;
+                }
+                h += `<div class="ms-week">Settimana dal ${fmtDate(w.week)}${w.hours ? ' · totale ' + fh(tot) + ' ore' : ''}</div><table class="ms-tab">${rows}</table>`;
+            });
+            box.innerHTML = h; box.hidden = false;
+        }
+        async function loadMyShift() {
+            if (!session) return;
+            try {
+                const d = await jsonp({ action: 'myshift', name: session.name, pin: session.pin }, 20000);
+                if (d && d.ok) { myWeeks = d.weeks || []; renderMyShift(); }
+            } catch (err) {}
+        }
 
         /* ---------- Procedure (PDF) ---------- */
         let procs = [];
         function fmtKb(kb) { const n = Number(kb) || 0; return n >= 1024 ? (Math.round(n / 102.4) / 10).toString().replace('.', ',') + ' MB' : n + ' KB'; }
         function renderProcs() {
-            $('procList').innerHTML = procs.length ? procs.map(p => {
+            const cats = [...new Set(procs.map(p => p.category || 'Generale'))].sort();
+            $('procList').innerHTML = procs.length ? cats.map(c => `<div class="proc-cat">${esc(c)}</div>` + procs.filter(p => (p.category || 'Generale') === c).map(p => {
                 const id = encodeURIComponent(p.fileId);
                 return `<div class="proc-item"><div class="proc-ico">PDF</div>
                     <div class="proc-txt"><b>${esc(p.title)}</b><span>${esc(p.at)} &middot; ${fmtKb(p.kb)}</span></div>
                     <div class="proc-act"><a class="btn btn-tool" href="https://drive.google.com/file/d/${id}/view" target="_blank" rel="noopener">Apri</a>
-                        <a class="btn btn-del" href="https://drive.google.com/uc?export=download&id=${id}" target="_blank" rel="noopener">Scarica</a></div></div>`;
-            }).join('') : '<div class="chat-empty">Nessuna procedura.</div>';
+                        <a class="btn btn-del" href="https://drive.google.com/uc?export=download&id=${id}" target="_blank" rel="noopener">Scarica</a></div>
+                    <div class="ack-row">${p.read ? '✓ Letta il ' + esc(p.read) : `<button type="button" class="ack-btn" data-ack="proc:${esc(p.id)}">Ho letto</button>`}</div></div>`;
+            }).join('')).join('') : '<div class="chat-empty">Nessuna procedura.</div>';
         }
+        // "Ho letto" su messaggi e procedure
+        document.addEventListener('click', async e => {
+            const b = e.target.closest('[data-ack]'); if (!b || !session) return;
+            const [kind, id] = b.dataset.ack.split(':');
+            b.disabled = true; b.textContent = 'Salvo…';
+            try {
+                const d = await jsonp({ action: 'ack', kind, id, name: session.name, pin: session.pin }, 20000);
+                if (d && d.ok) {
+                    const it = (kind === 'msg' ? msgs : procs).find(x => x.id === id); if (it) it.read = d.at;
+                    if (kind === 'msg') renderMsgs(); else renderProcs();
+                    return;
+                }
+                toast('Conferma non salvata: ' + ((d && d.error) || 'riprova'));
+            } catch (err) { toast('Conferma non salvata: controlla la connessione.'); }
+            b.disabled = false; b.textContent = 'Ho letto';
+        });
         async function loadProcs(manual) {
             if (!session) return;
             const btn = $('refreshProc'); if (manual) { btn.disabled = true; btn.textContent = 'Aggiorno...'; }
@@ -851,7 +1109,7 @@
                 }
             } catch (err) { setMsg($('schMsg'), 'err', 'Impossibile caricare l\'immagine. Riprova.'); }
         }
-        $('refreshSch').addEventListener('click', () => loadSchedule(false));
+        $('refreshSch').addEventListener('click', () => { loadSchedule(false); loadMyShift(); });
         $('schWeek').addEventListener('change', e => { showSchedule(e.target.value, false); });
         function openViewer() {
             if (!schDataUrl) return;
@@ -918,6 +1176,9 @@
                     <div class="req-top"><b>${esc(reqTitle(r))}</b><span class="badge ${badgeClass(r.status)}">${esc(r.status)}</span></div>
                     <div class="req-meta">${reqWhen(r)}${r.sentAt ? ' &middot; inviata il ' + esc(r.sentAt) : ''}</div>
                     ${r.notes ? `<div class="req-note">${esc(r.notes)}</div>` : ''}
+                    ${r.protocol ? `<div class="req-meta">Protocollo: <b>${esc(r.protocol)}</b></div>` : ''}
+                    <div class="req-att">${r.hasFile ? `<span>📎 Allegato caricato</span> <button type="button" class="link-btn" data-act="viewatt">Vedi</button> <button type="button" class="link-btn" data-act="attach">Sostituisci</button>`
+                        : (r.status !== 'Rifiutato' ? `<button type="button" class="link-btn" data-act="attach">📎 Allega file (foto o PDF)</button>` : '')}</div>
                     ${r.status === 'Rifiutato' && r.reason ? `<div class="req-reason">Motivo del rifiuto: ${esc(r.reason)}</div>` : ''}
                     ${pending ? `<div class="req-actions">
                         <button type="button" class="btn btn-tool" data-act="edit">Modifica</button>
@@ -964,6 +1225,8 @@
             const b = e.target.closest('button[data-act]');
             if (!b) return;
             const card = b.closest('.req');
+            if (b.dataset.act === 'viewatt') { viewAttach(card.dataset.id); return; }
+            if (b.dataset.act === 'attach') { $('attachPick').dataset.id = card.dataset.id; $('attachPick').value = ''; $('attachPick').click(); return; }
             const id = card.dataset.id;
             const r = myReqs.find(x => String(x.id) === String(id));
             if (!r) return;
@@ -996,6 +1259,7 @@
                         <div class="form-group end-group"><label>Ultimo giorno</label><input type="date" name="endDate" value="${esc(r.endDate)}"></div>
                     </div>
                     <div class="form-group slot-group"><label>Quale mezza giornata?</label><div class="seg">${rad('Mattina')}${rad('Pomeriggio')}</div></div>
+                    <div class="form-group proto-group"><label>Numero di protocollo del certificato <span class="opt">(facoltativo)</span></label><input type="text" name="protocol" maxlength="40" value="${esc(r.protocol || '')}"></div>
                     <div class="form-group"><label>Note <span class="opt">(facoltative)</span></label><textarea name="notes" rows="2" maxlength="300">${esc(r.notes)}</textarea></div>
                     <div class="req-actions">
                         <button type="submit" class="btn btn-success">Salva modifiche</button>
@@ -1020,7 +1284,7 @@
             btn.disabled = true; setMsg(msgEl, 'info', 'Salvataggio...');
             try {
                 const d = await jsonp({ action: 'edit', name: session.name, pin: session.pin, id: f.dataset.id,
-                    type: fd.get('type'), startDate: fd.get('startDate'), endDate: fd.get('endDate'), notes: fd.get('notes') || '', slot: fd.get('slot') || '' }, 20000);
+                    type: fd.get('type'), startDate: fd.get('startDate'), endDate: fd.get('endDate'), notes: fd.get('notes') || '', slot: fd.get('slot') || '', protocol: fd.get('protocol') || '' }, 20000);
                 if (d && d.ok) { toast('Richiesta modificata.'); loadMine(true); return; }
                 setMsg(msgEl, 'err', d && d.error === "gia' gestita" ? 'La richiesta è già stata gestita: non si può più modificare.' : 'Modifica non riuscita: ' + ((d && d.error) || 'errore'));
             } catch (err) { setMsg(msgEl, 'err', 'Connessione al server assente. Riprova.'); }
@@ -1047,6 +1311,9 @@
             $('reqId').value = id;
             $('reqName').value = session.name;
             $('reqPin').value = session.pin;
+            const pf = $('reqFile').files[0] || null;
+            if (pf) { const badF = checkAttach(pf); if (badF) { e.preventDefault(); showMsg('err', badF); return; } }
+            pendingFile = pf;
             btn.disabled = true;
             btn.textContent = 'Invio in corso...';
             showMsg('info', 'Invio della richiesta in corso...');
@@ -1065,8 +1332,13 @@
                         form.reset(); $('notesCount').textContent = '0';
                         btn.disabled = false; btn.textContent = 'Invia Richiesta';
                         showTab('mine');
-                        setMsg($('mineMsg'), 'ok', 'Richiesta inviata con successo! L\'amministratore è stato avvisato via email.');
-                        setTimeout(() => setMsg($('mineMsg'), '', ''), 8000);
+                        const pf = pendingFile; pendingFile = null;
+                        if (pf) {
+                            setMsg($('mineMsg'), 'info', 'Richiesta inviata. Carico l\'allegato…');
+                            const okA = await uploadAttach(id, pf);
+                            setMsg($('mineMsg'), okA ? 'ok' : 'err', okA ? 'Richiesta e allegato inviati con successo!' : 'Richiesta inviata, ma l\'allegato non è stato caricato: riprova con "Allega file".');
+                        } else setMsg($('mineMsg'), 'ok', 'Richiesta inviata con successo! L\'amministratore è stato avvisato via email.');
+                        setTimeout(() => setMsg($('mineMsg'), '', ''), 9000);
                         loadMine(false);
                         return;
                     }
