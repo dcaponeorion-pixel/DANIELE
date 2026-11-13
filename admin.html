@@ -540,6 +540,41 @@
         .proc-act .btn { margin: 0; padding: 6px 10px; font-size: 0.78rem; width: auto; text-decoration: none; }
         .chat-compose input[type=text] { width: 100%; margin: 0; padding: 10px; border: 2px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
         .chat-compose input[type=file] { width: 100%; margin: 0; padding: 8px; border: 2px dashed var(--border); border-radius: 8px; font-family: inherit; font-size: 0.85rem; background: #fff; }
+        /* ===== Nuove funzioni: assenti, cambi turno, registro, allegati ===== */
+        .who { font-weight: 900; color: #fff; font-size: 0.85rem; align-self: center; white-space: nowrap; }
+        .abs-card { margin-bottom: 20px; padding: 16px 20px; }
+        .abs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+        .abs-grid h3 { font-size: 1rem; color: var(--unieuro-blue-dark); margin-bottom: 8px; }
+        .abs-list { display: flex; flex-wrap: wrap; gap: 6px; }
+        .abs-chip { background: #eef3fb; border: 1px solid #c9d6ee; border-radius: 14px; padding: 4px 10px; font-size: 0.82rem; font-weight: 800; }
+        .abs-chip small { font-weight: 700; color: #556; }
+        .abs-chip.t-Malattia { background: #fdebe3; border-color: #f4b183; }
+        .abs-chip.t-Ferie { background: #fff6d8; border-color: #ffd966; }
+        .abs-chip.t-Permesso { background: #fff9e0; border-color: #ffe699; }
+        .abs-chip.pend { opacity: .7; border-style: dashed; }
+        .abs-none { color: #667; font-weight: 700; font-size: 0.88rem; }
+        .swap-item { border: 2px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+        .swap-item.todo { border-color: var(--unieuro-orange); background: #fff8f2; }
+        .swap-top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; font-weight: 900; }
+        .swap-meta { font-size: 0.85rem; font-weight: 700; color: #445; margin-top: 4px; }
+        .swap-act { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .swap-act .btn { width: auto; padding: 6px 12px; font-size: 0.85rem; margin: 0; }
+        .acc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+        .acc-box { background: #f4f6fa; border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+        .acc-box h3 { font-size: 0.95rem; color: var(--unieuro-blue-dark); margin-bottom: 6px; }
+        .acc-box p { font-size: 0.88rem; font-weight: 700; margin-bottom: 8px; }
+        .acc-box .warn { color: #c00000; }
+        .attach-btn { border: 1px solid var(--unieuro-blue); background: #eef3fb; color: var(--unieuro-blue-dark); border-radius: 8px; padding: 2px 8px; font-weight: 900; font-size: 0.78rem; cursor: pointer; font-family: inherit; margin-top: 4px; }
+        .proto { display: block; font-size: 0.8rem; font-weight: 800; color: #445; margin-top: 3px; }
+        .read-btn { border: 0; background: none; color: var(--unieuro-blue); font-weight: 900; font-size: 0.74rem; cursor: pointer; padding: 2px 0 0; font-family: inherit; text-decoration: underline; }
+        .read-list { columns: 2; font-size: 0.88rem; font-weight: 700; margin: 6px 0 12px; padding-left: 18px; }
+        .proc-cat { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .6px; color: #556; margin: 8px 0 2px; }
+        .proc-item { flex-wrap: wrap; }
+        .proc-item .proc-act { flex: 1 1 100%; justify-content: flex-start; }
+        #modal.wide #modalBody img.att-img { max-width: 100%; max-height: 70vh; display: block; margin: 0 auto; border: 1px solid #ccc; border-radius: 6px; }
+        .seg2 { display: flex; gap: 8px; }
+        .seg2 label { flex: 1; margin: 0; display: flex; gap: 6px; align-items: center; border: 2px solid var(--border); border-radius: 8px; padding: 8px; font-weight: 800; cursor: pointer; }
+        .seg2 input { width: 18px; height: 18px; margin: 0; }
         .sch-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 14px; font-size: 0.9rem; }
         .sch-box h3 { font-size: 1rem; color: var(--unieuro-blue-dark); margin-bottom: 8px; }
         .sch-box ul { margin: 0; padding-left: 18px; }
@@ -605,6 +640,10 @@
             <h2>Accesso Amministratore</h2>
             <form onsubmit="loginAdmin(event)">
                 <div class="form-group">
+                    <label for="adminUser">Utente</label>
+                    <select id="adminUser"><option>DANIELE</option><option>GIUSEPPE</option></select>
+                </div>
+                <div class="form-group">
                     <label for="adminPass">Password di Accesso</label>
                     <input type="password" id="adminPass" required placeholder="Inserisci password">
                 </div>
@@ -623,8 +662,10 @@
                     <button type="button" class="tab" data-tab="stats">Statistiche ed Esporta</button>
                     <button type="button" class="tab" data-tab="schedule">Orario</button>
                     <button type="button" class="tab" data-tab="employees">Dipendenti</button>
+                    <button type="button" class="tab" data-tab="log">Registro</button>
                 </div>
                 <div class="dash-actions">
+                    <span class="who" id="whoAmI"></span>
                     <button type="button" class="btn" id="reloadBtn">Aggiorna</button>
                     <button type="button" class="btn btn-danger" onclick="logoutAdmin()">Logout</button>
                 </div>
@@ -632,6 +673,13 @@
 
             <!-- ============ RICHIESTE ============ -->
             <section class="tab-panel active" id="tab-requests">
+                <!-- ASSENTI OGGI / QUESTA SETTIMANA -->
+                <div class="card abs-card no-print" id="absCard">
+                    <div class="abs-grid">
+                        <div><h3>Assenti oggi <span class="count" id="absTodayN">0</span></h3><div class="abs-list" id="absToday"></div></div>
+                        <div><h3>Assenti questa settimana <span class="count" id="absWeekN">0</span></h3><div class="abs-list" id="absWeek"></div></div>
+                    </div>
+                </div>
                 <div class="dash-grid">
 
                     <!-- SINISTRA: ARCHIVIO -->
@@ -677,6 +725,8 @@
                             <div class="toolbar" id="toolbarPending">
                                 <label class="selall"><input type="checkbox" data-selall="pending"> Seleziona tutto</label>
                                 <button class="btn btn-tool" data-print="pending" disabled>Stampa selezionate (0)</button>
+                                <span style="flex:1"></span>
+                                <button type="button" class="btn btn-success" id="addReqBtn" style="width:auto">+ Inserisci richiesta</button>
                             </div>
 
                             <div class="table-responsive">
@@ -695,6 +745,12 @@
                                     <tbody id="adminTableBody"></tbody>
                                 </table>
                             </div>
+                        </div>
+                        <!-- CAMBI TURNO -->
+                        <div class="card no-print" id="swapCard">
+                            <h2>Cambi turno <span class="count" id="swapCount">0</span></h2>
+                            <p class="hint-left">Il dipendente propone lo scambio, il collega accetta dall'app e qui tu approvi o rifiuti. Dopo l'approvazione ricorda di aggiornare e ripubblicare l'orario.</p>
+                            <div id="swapList"></div>
                         </div>
                     </main>
                 </div>
@@ -792,6 +848,7 @@
                             <span class="sch-grp-t">Modifica</span>
                             <button type="button" class="btn btn-small btn-success" data-sch="save">Salva</button>
                             <button type="button" class="btn btn-small btn-tool" data-sch="copy">Copia / Ripeti</button>
+                            <button type="button" class="btn btn-small btn-tool" data-sch="tpl">Modelli</button>
                             <button type="button" class="btn btn-small btn-tool" data-sch="verify">Verifica permessi</button>
                             <button type="button" class="btn btn-small btn-tool" data-sch="month">Totale ore mese</button>
                             <button type="button" class="btn btn-small btn-del" data-sch="clear">Svuota</button>
@@ -854,6 +911,10 @@
                     <div class="chat-compose">
                         <label for="procTitle">Titolo</label>
                         <input type="text" id="procTitle" maxlength="80" placeholder="es. Procedura antincendio">
+                        <label for="procCat">Categoria</label>
+                        <input type="text" id="procCat" maxlength="40" list="procCats" placeholder="es. Sicurezza, Magazzino, Cassa…">
+                        <datalist id="procCats"></datalist>
+                        <input type="file" id="procReplFile" accept="application/pdf,.pdf" hidden>
                         <label for="procFile">File PDF (max 10 MB)</label>
                         <input type="file" id="procFile" accept="application/pdf,.pdf">
                         <div class="chat-send">
@@ -865,6 +926,41 @@
                 </div><!-- /side-col -->
                 </div><!-- /emp-grid -->
             </section>
+            <!-- ============ REGISTRO E ACCOUNT ============ -->
+            <section class="tab-panel" id="tab-log">
+                <div class="card">
+                    <h2>Account e sicurezza</h2>
+                    <div class="acc-grid">
+                        <div class="acc-box">
+                            <h3>Utente</h3>
+                            <p>Sei entrato come <b id="accUser"></b>.</p>
+                            <button type="button" class="btn btn-small btn-tool" id="accPass">Cambia la mia password</button>
+                        </div>
+                        <div class="acc-box">
+                            <h3>Backup dei dati</h3>
+                            <p id="accBackup">…</p>
+                            <button type="button" class="btn btn-small btn-success" id="accBackupNow">Fai un backup adesso</button>
+                        </div>
+                        <div class="acc-box">
+                            <h3>Automatismi del lunedì</h3>
+                            <p id="accAuto">…</p>
+                            <p id="accNext"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Registro delle attività <span class="count" id="logCount">0</span></h2>
+                    <div class="filters-grid no-print">
+                        <div><label for="logUser">Utente</label><select id="logUser"><option value="ALL">Tutti</option></select></div>
+                        <div><label for="logSearch">Cerca</label><input type="search" id="logSearch" placeholder="Azione, nome, dettaglio..."></div>
+                        <div><button type="button" class="btn btn-small btn-success" id="logXlsx">Scarica Excel</button></div>
+                    </div>
+                    <div class="table-responsive">
+                        <table><thead><tr><th>Data</th><th>Utente</th><th>Azione</th><th>Dettaglio</th></tr></thead><tbody id="logBody"></tbody></table>
+                    </div>
+                </div>
+            </section>
+
         </div>
     </div>
 
@@ -883,7 +979,7 @@
     <div id="toast" class="toast" hidden></div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxTTVtoOC1SimcrRNcrMGOqLGtFWXLU9xB5pl1-fbHTpzfiACbLJ_xDdSvfJcNRnfsg/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyL9RhLcHyt8vB6fE_hC4-RawnOX1ZX4oNeaKsUJPUDuTn7kTWZyvIR1ICMs0izkvuB/exec";
 
         // Chiamata verso Google Script: prima via JSONP (tag script), se non va via fetch (piano B)
         function jsonpOnce(params, timeoutMs) {
@@ -910,7 +1006,9 @@
                 return JSON.parse(text);          // se arriva una pagina di login Google, qui va in errore
             } finally { clearTimeout(timer); }
         }
+        let adminUser = '';
         async function jsonp(params, timeoutMs) {
+            if (params && params.password !== undefined && adminUser && !params.user) params = Object.assign({ user: adminUser }, params);
             const t = timeoutMs || 15000;
             let e1, e2;
             try { return await jsonpOnce(params, Math.min(t, 12000)); } catch (a) { e1 = a; }
@@ -1082,6 +1180,7 @@
         let currentVisible = { pending: [], approved: [], rejected: [] };
         let activeTab = 'requests';
         let lastLoad = 0;
+        { const u = lsGet('hr_admin_user'); if (u && [...$('adminUser').options].some(o => o.value === u)) $('adminUser').value = u; }
         const now0 = new Date();
         let calY = now0.getFullYear(), calM = now0.getMonth(), calSel = null;
 
@@ -1098,11 +1197,12 @@
 
         /* ================= Accesso e caricamento dati ================= */
         async function fetchAll(pass) {
-            const [a, b] = await Promise.all([
+            const [a, b, c] = await Promise.all([
                 jsonp({ action: 'list', password: pass }, 25000),
-                jsonp({ action: 'emplist', password: pass }, 25000)
+                jsonp({ action: 'emplist', password: pass }, 25000),
+                jsonp({ action: 'swaplist', password: pass }, 25000).catch(() => null)
             ]);
-            return { a, b };
+            return { a, b, c };
         }
 
         async function loginAdmin(e) {
@@ -1111,10 +1211,15 @@
             const pass = $('adminPass').value;
             btn.disabled = true; btn.textContent = 'Verifica in corso...';
             setLoginMsg('', '');
+            adminUser = $('adminUser').value;
             try {
-                const { a, b } = await fetchAll(pass);
+                const lg = await jsonp({ action: 'adminlogin', password: pass }, 25000);
+                if (lg && !lg.ok && lg.error === 'locked') { setLoginMsg('err', 'Troppi tentativi sbagliati: riprova tra 15 minuti.'); btn.disabled = false; btn.textContent = 'Accedi'; return; }
+                if (lg && !lg.ok && lg.error !== 'password') { setLoginMsg('err', 'Lo script Google non è aggiornato: incolla il nuovo Code.gs e crea una Nuova versione. (' + lg.error + ')'); btn.disabled = false; btn.textContent = 'Accedi'; return; }
+                const { a, b, c } = (lg && lg.ok) ? await fetchAll(pass) : { a: lg, b: lg };
                 if (a && a.ok && b && b.ok) {
-                    adminPassword = pass;
+                    adminPassword = pass; swaps = (c && c.ok && c.swaps) || [];
+                    lsSet('hr_admin_user', adminUser); $('whoAmI').textContent = adminUser;
                     requests = a.requests || [];
                     employees = b.employees || [];
                     lastLoad = Date.now();
@@ -1135,7 +1240,7 @@
         }
 
         function logoutAdmin() {
-            adminPassword = ''; requests = []; employees = []; selected = new Set(); messages = []; msgPass = ''; procs = []; procPass = '';
+            adminPassword = ''; adminUser = ''; requests = []; employees = []; selected = new Set(); messages = []; msgPass = ''; procs = []; procPass = ''; swaps = []; logRows = [];
             $('admin-login').style.display = 'block';
             $('admin-dashboard').style.display = 'none';
             $('adminPass').value = '';
@@ -1147,9 +1252,10 @@
             const btn = $('reloadBtn');
             if (!silent) { btn.disabled = true; btn.textContent = 'Aggiorno...'; }
             try {
-                const { a, b } = await fetchAll(adminPassword);
+                const { a, b, c } = await fetchAll(adminPassword);
                 if (a && a.ok && b && b.ok) {
-                    requests = a.requests || []; employees = b.employees || [];
+                    requests = a.requests || []; employees = b.employees || []; if (c && c.ok) swaps = c.swaps || [];
+                    msgPass = ''; procPass = '';      // messaggi, procedure e letture si ricaricano
                     lastLoad = Date.now();
                     refreshEmployeeSelects();
                     renderActiveTab();
@@ -1178,9 +1284,10 @@
         document.querySelectorAll('.admin-tabs-wrap .tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
 
         function renderActiveTab() {
-            const pend = requests.filter(r => r.status === 'In attesa').length;
+            const pend = requests.filter(r => r.status === 'In attesa').length + swaps.filter(s => s.status === SWAP_ADMIN).length;
             const badge = $('pendingBadge'); badge.textContent = pend; badge.hidden = pend === 0;
-            if (activeTab === 'requests') renderRequests();
+            if (activeTab === 'requests') { renderRequests(); renderAbsences(); renderSwaps(); }
+            else if (activeTab === 'log') renderLog();
             else if (activeTab === 'calendar') renderCalendar();
             else if (activeTab === 'stats') renderStatsAll();
             else if (activeTab === 'employees') renderEmployees();
@@ -1272,7 +1379,7 @@
                     <div class="a-body">
                         <div class="a-name">${esc(r.name)}</div>
                         <div class="a-meta">${esc(typeFull(r))} &middot; ${fmtDate(r.startDate)} al ${fmtDate(r.endDate)}</div>
-                        ${r.notes ? `<div class="a-note">${esc(r.notes)}</div>` : ''}
+                        ${r.notes ? `<div class="a-note">${esc(r.notes)}</div>` : ''}${extraNote(r)}
                         ${r.status === 'Rifiutato' && r.reason ? `<div class="a-reason">Motivo: ${esc(r.reason)}</div>` : ''}
                         <div class="a-foot">
                             <button class="btn btn-del" style="width:auto; padding:5px 12px; font-size:0.8rem;" data-del="${esc(id)}">Cancella</button>
@@ -1324,7 +1431,7 @@
                         <td data-label="Dipendente"><strong>${esc(req.name)}</strong></td>
                         <td data-label="Tipo">${esc(typeFull(req))}</td>
                         <td data-label="Periodo">${fmtDate(req.startDate)} al ${fmtDate(req.endDate)}${overlapNote(req)}</td>
-                        <td data-label="Note">${esc(req.notes) || '-'}</td>
+                        <td data-label="Note">${esc(req.notes) || (req.protocol || req.hasFile ? '' : '-')}${extraNote(req)}</td>
                         <td data-label="Stato"><span class="badge ${badgeClass(req.status)}">${esc(req.status)}</span></td>
                         <td class="col-act" data-label="Azioni">
                             <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -1868,8 +1975,210 @@
             }
         });
 
+        /* ================= ASSENTI OGGI / QUESTA SETTIMANA ================= */
+        function renderAbsences() {
+            const today = isoOf(new Date());
+            const mon = isoOf(addDays(parseISO(today), -((parseISO(today).getDay() + 6) % 7))), sun = isoOf(addDays(parseISO(mon), 6));
+            const act = requests.filter(r => r.status !== 'Rifiutato');
+            const chip = (r, withDates) => `<span class="abs-chip t-${esc(r.type.split(' ')[0])} ${r.status === 'In attesa' ? 'pend' : ''}" title="${esc(r.status)}">${esc(r.name)} <small>· ${esc(typeFull(r))}${withDates ? ' · ' + (r.startDate === r.endDate ? fmtDate(r.startDate).slice(0, 5) : fmtDate(r.startDate).slice(0, 5) + '–' + fmtDate(r.endDate).slice(0, 5)) : (r.endDate > today ? ' · fino al ' + fmtDate(r.endDate).slice(0, 5) : '')}${r.status === 'In attesa' ? ' · in attesa' : ''}</small></span>`;
+            const t = act.filter(r => r.startDate <= today && r.endDate >= today).sort((a, b) => a.name.localeCompare(b.name));
+            const w = act.filter(r => r.startDate <= sun && r.endDate >= mon).sort((a, b) => a.startDate.localeCompare(b.startDate) || a.name.localeCompare(b.name));
+            $('absTodayN').textContent = t.filter(r => r.status === 'Approvato').length;
+            $('absWeekN').textContent = new Set(w.filter(r => r.status === 'Approvato').map(r => r.name)).size;
+            $('absToday').innerHTML = t.length ? t.map(r => chip(r, false)).join('') : '<span class="abs-none">Nessun assente oggi.</span>';
+            $('absWeek').innerHTML = w.length ? w.map(r => chip(r, true)).join('') : '<span class="abs-none">Nessuna assenza questa settimana.</span>';
+        }
+
+        /* ================= ALLEGATI E PROTOCOLLO ================= */
+        function extraNote(r) {
+            return (r.protocol ? `<span class="proto">Protocollo: ${esc(r.protocol)}</span>` : '') +
+                   (r.hasFile ? `<button type="button" class="attach-btn" data-attach="${esc(r.id)}">📎 Vedi allegato</button>` : '');
+        }
+        function b64Blob(b64, mime) {
+            const bin = atob(b64), u = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+            return new Blob([u], { type: mime });
+        }
+        async function showAttachment(id) {
+            toast('Carico l\'allegato…', 4000);
+            try {
+                const d = await jsonp({ action: 'attach', id, password: adminPassword }, 40000);
+                if (!d || !d.ok) { toast('Allegato non disponibile: ' + ((d && d.error) || 'errore'), 6000); return; }
+                const url = URL.createObjectURL(b64Blob(d.data, d.mime));
+                const isImg = /^image\//.test(d.mime);
+                const r = requests.find(x => String(x.id) === String(id));
+                $('modal').classList.add('wide');
+                await showModal({
+                    title: 'Allegato' + (r ? ' - ' + r.name : ''),
+                    body: (isImg ? `<img class="att-img" src="${url}" alt="Allegato">` : '<p>Il file è un PDF.</p>') +
+                          `<p style="margin-top:12px"><a class="btn btn-small btn-tool" style="text-decoration:none;display:inline-block" href="${url}" target="_blank" rel="noopener">Apri in una nuova scheda</a> ` +
+                          `<a class="btn btn-small btn-del" style="text-decoration:none;display:inline-block" href="${url}" download="${esc(d.name || 'allegato')}">Scarica</a></p>`,
+                    okText: 'Chiudi'
+                });
+                $('modal').classList.remove('wide');
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+            } catch (err) { toast('Impossibile caricare l\'allegato.', 6000); }
+        }
+        document.addEventListener('click', e => { const b = e.target.closest('[data-attach]'); if (b) showAttachment(b.dataset.attach); });
+
+        /* ================= INSERISCI RICHIESTA PER UN DIPENDENTE ================= */
+        async function adminNewRequest() {
+            const emps = employees.filter(e => e.active);
+            const res = showModal({
+                title: 'Inserisci una richiesta per un dipendente',
+                body: '<div class="form-group"><label>Dipendente</label><select id="arName">' + emps.map(e => `<option>${esc(e.name)}</option>`).join('') + '</select></div>' +
+                      '<div class="form-group"><label>Tipologia</label><select id="arType"><option value="Malattia">Malattia</option><option value="Giorno Libero">Giorno Libero</option><option value="Permesso">Mezza Giornata</option><option value="Ferie">Ferie</option></select></div>' +
+                      '<div class="form-group"><label id="arStartL">Primo giorno</label><input type="date" id="arStart" value="' + isoOf(new Date()) + '"></div>' +
+                      '<div class="form-group" id="arEndG"><label>Ultimo giorno</label><input type="date" id="arEnd" value="' + isoOf(new Date()) + '"></div>' +
+                      '<div class="form-group" id="arSlotG" hidden><label>Quale mezza giornata?</label><div class="seg2"><label><input type="radio" name="arSlot" value="Mattina" checked> Mattina</label><label><input type="radio" name="arSlot" value="Pomeriggio"> Pomeriggio</label></div></div>' +
+                      '<div class="form-group" id="arProtoG"><label>Numero di protocollo del certificato (facoltativo)</label><input type="text" id="arProto" maxlength="40"></div>' +
+                      '<div class="form-group"><label>Note (facoltative)</label><input type="text" id="arNotes" maxlength="250" placeholder="es. ha avvisato per telefono"></div>' +
+                      '<div class="form-group"><label>Stato</label><select id="arStatus"><option value="Approvato">Già approvata</option><option value="In attesa">In attesa (la decido dopo)</option></select></div>' +
+                      '<label class="sch-opt"><input type="checkbox" id="arMail"><span>Avvisa il dipendente per email<small>Solo se la richiesta è già approvata e il dipendente ha un indirizzo email.</small></span></label>',
+                okText: 'Inserisci',
+                collect: () => {
+                    const type = $('arType').value, single = type === 'Giorno Libero' || type === 'Permesso';
+                    return { name: $('arName').value, type, startDate: $('arStart').value, endDate: single ? $('arStart').value : $('arEnd').value,
+                             slot: type === 'Permesso' ? document.querySelector('input[name=arSlot]:checked').value : '', protocol: type === 'Malattia' ? $('arProto').value.trim() : '',
+                             notes: $('arNotes').value.trim(), status: $('arStatus').value, notify: $('arMail').checked ? '1' : '0' };
+                },
+                validate: v => !v.name ? 'Scegli il dipendente.' : (!v.startDate ? 'Scegli il giorno.' : (!v.endDate ? 'Scegli l\'ultimo giorno.' : (v.endDate < v.startDate ? 'L\'ultimo giorno non può essere prima del primo.' : '')))
+            });
+            const mb = $('modalBody');
+            const upd = () => {
+                const type = $('arType').value, single = type === 'Giorno Libero' || type === 'Permesso';
+                $('arEndG').hidden = single; $('arSlotG').hidden = type !== 'Permesso'; $('arProtoG').hidden = type !== 'Malattia';
+                $('arStartL').textContent = single ? 'Giorno' : 'Primo giorno';
+            };
+            mb.onchange = upd; upd();
+            const v = await res; mb.onchange = null;
+            if (!v) return;
+            try {
+                const d = await jsonp(Object.assign({ action: 'adminreq', password: adminPassword }, v), 25000);
+                if (d && d.ok) { requests = d.requests || requests; renderActiveTab(); toast('Richiesta inserita.' + (d.mail === 'inviata' ? ' Email inviata al dipendente.' : ''), 6000); }
+                else toast('Non inserita: ' + ((d && d.error) || 'errore'), 7000);
+            } catch (err) { toast('Impossibile contattare il server.', 6000); }
+        }
+        $('addReqBtn').addEventListener('click', adminNewRequest);
+
+        /* ================= CAMBI TURNO ================= */
+        let swaps = [];
+        const SWAP_ADMIN = 'In attesa di approvazione', SWAP_PEER = 'In attesa del collega';
+        function swapBadge(s) { return s === 'Approvato' ? 'badge-approved' : (/Rifiutato/.test(s) ? 'badge-rejected' : 'badge-pending'); }
+        function renderSwaps() {
+            const todo = swaps.filter(s => s.status === SWAP_ADMIN), wait = swaps.filter(s => s.status === SWAP_PEER);
+            const done = swaps.filter(s => s.status !== SWAP_ADMIN && s.status !== SWAP_PEER).slice(-12).reverse();
+            $('swapCount').textContent = todo.length;
+            const item = (s, cls) => `<div class="swap-item ${cls}">
+                <div class="swap-top"><span>${esc(s.from)} ⇄ ${esc(s.to)}</span><span class="badge ${swapBadge(s.status)}">${esc(s.status)}</span></div>
+                <div class="swap-meta">${esc(s.from)} cede il turno del <b>${fmtDate(s.myDate)}</b> · ${esc(s.to)} cede il turno del <b>${fmtDate(s.otherDate)}</b></div>
+                ${s.note ? `<div class="swap-meta">Note: ${esc(s.note)}</div>` : ''}${s.reason ? `<div class="swap-meta">Motivo: ${esc(s.reason)}</div>` : ''}
+                <div class="swap-meta" style="color:#778">Proposto il ${esc(s.at)}${s.handledAt ? ' · gestito il ' + esc(s.handledAt) + (s.handledBy ? ' da ' + esc(s.handledBy) : '') : ''}</div>
+                <div class="swap-act">${s.status === SWAP_ADMIN ? `<button class="btn btn-success" data-swap="Approvato" data-sid="${esc(s.id)}">Approva</button><button class="btn btn-danger" data-swap="Rifiutato" data-sid="${esc(s.id)}">Rifiuta</button>` : ''}
+                    <button class="btn btn-del" data-swap="Elimina" data-sid="${esc(s.id)}">Cancella</button></div></div>`;
+            $('swapList').innerHTML = (todo.length || wait.length || done.length)
+                ? todo.map(s => item(s, 'todo')).join('') + wait.map(s => item(s, '')).join('') + done.map(s => item(s, '')).join('')
+                : '<div class="empty">Nessun cambio turno.</div>';
+        }
+        $('swapList').addEventListener('click', async e => {
+            const b = e.target.closest('[data-swap]'); if (!b) return;
+            const st = b.dataset.swap; let reason = '';
+            if (st === 'Elimina') { if (!confirm('Cancellare questo cambio turno dall\'elenco?')) return; }
+            else if (st === 'Rifiutato') {
+                const r = await showModal({ title: 'Rifiuta il cambio turno', body: '<div class="form-group"><label>Motivo (facoltativo)</label><input type="text" id="swReason" maxlength="250"></div>', okText: 'Rifiuta', okClass: 'btn-danger', collect: () => ({ reason: $('swReason').value.trim() }) });
+                if (!r) return; reason = r.reason;
+            } else if (!confirm('Approvare il cambio turno? I due dipendenti riceveranno un\'email (se hanno un indirizzo).')) return;
+            b.disabled = true;
+            try {
+                const d = await jsonp({ action: 'swapset', id: b.dataset.sid, status: st, reason, password: adminPassword }, 25000);
+                if (d && d.ok) { swaps = d.swaps || []; renderActiveTab(); toast(st === 'Elimina' ? 'Cambio turno cancellato.' : 'Cambio turno ' + st.toLowerCase() + '.' + (st === 'Approvato' ? ' Ricorda di aggiornare l\'orario.' : ''), 6000); }
+                else { toast('Operazione non riuscita: ' + ((d && d.error) || 'errore'), 7000); b.disabled = false; }
+            } catch (err) { toast('Impossibile contattare il server.'); b.disabled = false; }
+        });
+
+        /* ================= REGISTRO E ACCOUNT ================= */
+        let logRows = [], logPass = '', logInfo = {};
+        async function loadLog() {
+            try {
+                const d = await jsonp({ action: 'loglist', password: adminPassword }, 25000);
+                if (d && d.ok) { logRows = d.log || []; logInfo = d; drawLog(); }
+                else $('logBody').innerHTML = '<tr><td colspan="4" style="text-align:center;">Registro non disponibile: aggiorna Code.gs e crea la nuova versione.</td></tr>';
+            } catch (err) { $('logBody').innerHTML = '<tr><td colspan="4" style="text-align:center;">Impossibile caricare il registro.</td></tr>'; }
+        }
+        function logFiltered() {
+            const u = $('logUser').value, q = $('logSearch').value.trim().toLowerCase();
+            return logRows.filter(l => (u === 'ALL' || l.user === u) && (!q || (l.user + ' ' + l.action + ' ' + l.detail + ' ' + l.at).toLowerCase().indexOf(q) >= 0));
+        }
+        function drawLog() {
+            $('accUser').textContent = adminUser;
+            $('accBackup').innerHTML = logInfo.lastBackup ? 'Ultimo backup: <b>' + esc(logInfo.lastBackup) + '</b>. Si tengono le ultime 8 copie nella cartella "Backup HR Orion SRL / Backup automatici".' : '<span class="warn">Nessun backup ancora fatto.</span>';
+            $('accAuto').innerHTML = logInfo.autoOn ? 'Attivi: backup ogni lunedì notte e promemoria via email il lunedì mattina.' : '<span class="warn">Non attivi: esegui la funzione <b>setup</b> nello script Google.</span>';
+            const nw = logInfo.nextWeek;
+            $('accNext').innerHTML = nw ? (nw.published ? 'Orario della settimana dal ' + fmtDate(nw.monday) + ': <b>pubblicato</b>.' : '<span class="warn">Orario della settimana dal ' + fmtDate(nw.monday) + ' non ancora pubblicato.</span>') : '';
+            const sel = $('logUser'), cur = sel.value, users = [...new Set(logRows.map(l => l.user))].sort();
+            sel.innerHTML = '<option value="ALL">Tutti</option>' + users.map(u => `<option>${esc(u)}</option>`).join('');
+            sel.value = users.indexOf(cur) >= 0 ? cur : 'ALL';
+            const list = logFiltered();
+            $('logCount').textContent = list.length;
+            $('logBody').innerHTML = list.length ? list.map(l => `<tr><td data-label="Data">${esc(l.at)}</td><td data-label="Utente"><strong>${esc(l.user)}</strong></td><td data-label="Azione">${esc(l.action)}</td><td data-label="Dettaglio">${esc(l.detail) || '-'}</td></tr>`).join('')
+                : '<tr><td colspan="4" style="text-align:center;">Nessuna attività.</td></tr>';
+        }
+        function renderLog() { if (logPass !== adminPassword + adminUser) { logPass = adminPassword + adminUser; } loadLog(); }
+        $('logUser').addEventListener('change', drawLog);
+        $('logSearch').addEventListener('input', drawLog);
+        $('logXlsx').addEventListener('click', () => {
+            const list = logFiltered(); if (!list.length) { toast('Niente da esportare.'); return; }
+            saveBlobAdmin(buildXlsxMulti([{ name: 'Registro', header: ['Data', 'Utente', 'Azione', 'Dettaglio'], widths: [18, 24, 34, 70], rows: list.map(l => [l.at, l.user, l.action, l.detail]) }]), 'registro_attivita_' + isoOf(new Date()) + '.xlsx');
+        });
+        $('accBackupNow').addEventListener('click', async () => {
+            const b = $('accBackupNow'); b.disabled = true; b.textContent = 'Backup in corso…';
+            try {
+                const d = await jsonp({ action: 'backupnow', password: adminPassword }, 60000);
+                if (d && d.ok) { toast('Backup creato: ' + d.name, 6000); loadLog(); } else toast('Backup non riuscito: ' + ((d && d.error) || 'errore'), 8000);
+            } catch (err) { toast('Backup non confermato: controlla tra qualche minuto nel registro.', 7000); }
+            b.disabled = false; b.textContent = 'Fai un backup adesso';
+        });
+        $('accPass').addEventListener('click', async () => {
+            const r = await showModal({
+                title: 'Cambia la password di ' + adminUser,
+                body: '<div class="form-group"><label>Password attuale</label><input type="password" id="cpOld" autocomplete="current-password"></div>' +
+                      '<div class="form-group"><label>Nuova password (almeno 6 caratteri)</label><input type="password" id="cpNew" autocomplete="new-password"></div>' +
+                      '<div class="form-group"><label>Ripeti la nuova password</label><input type="password" id="cpNew2" autocomplete="new-password"></div>' +
+                      '<p class="hint-left">La password vale solo per l\'utente ' + esc(adminUser) + '. Se la dimentichi, l\'altro amministratore non può vederla: va reimpostata dallo script Google.</p>',
+                okText: 'Cambia password',
+                collect: () => ({ old: $('cpOld').value, n1: $('cpNew').value, n2: $('cpNew2').value }),
+                validate: v => v.old !== adminPassword ? 'La password attuale non è corretta.' : (v.n1.length < 6 ? 'La nuova password deve avere almeno 6 caratteri.' : (v.n1 !== v.n2 ? 'Le due password nuove non coincidono.' : ''))
+            });
+            if (!r) return;
+            try {
+                const d = await jsonp({ action: 'adminpass', password: adminPassword, newpass: r.n1 }, 20000);
+                if (d && d.ok) { adminPassword = r.n1; msgPass = adminPassword; procPass = adminPassword; schPass = adminPassword; toast('Password cambiata. Dal prossimo accesso usa quella nuova.', 7000); loadLog(); }
+                else toast('Password non cambiata: ' + ((d && d.error) || 'errore'), 7000);
+            } catch (err) { toast('Impossibile contattare il server.', 6000); }
+        });
+
         /* ================= MESSAGGI AI DIPENDENTI ================= */
         let messages = [], msgPass = '', msgBusy = false;
+        // conferme di lettura: "Letto da 3/10" e, al clic, chi ha letto e chi no
+        function readTargets(onlyName) { return onlyName ? [onlyName] : employees.filter(e => e.active).map(e => e.name); }
+        function readLabel(item, onlyName) {
+            const t = readTargets(onlyName), n = (item.readers || []).filter(r => t.indexOf(r.name) >= 0).length;
+            return '✓ Letto da ' + n + '/' + t.length;
+        }
+        document.addEventListener('click', async e => {
+            const b = e.target.closest('[data-readers]'); if (!b) return;
+            const [kind, id] = b.dataset.readers.split(':');
+            const item = (kind === 'msg' ? messages : procs).find(x => x.id === id); if (!item) return;
+            const t = readTargets(kind === 'msg' && item.to !== 'ALL' ? item.to : null);
+            const yes = (item.readers || []).filter(r => t.indexOf(r.name) >= 0), names = yes.map(r => r.name), no = t.filter(n => names.indexOf(n) < 0);
+            await showModal({
+                title: 'Conferme di lettura',
+                body: '<p><b>' + esc(kind === 'msg' ? item.text.slice(0, 80) : item.title) + '</b></p>' +
+                      '<p style="margin-top:10px;color:#1c7a34;font-weight:900">Hanno letto (' + yes.length + ')</p><ul class="read-list">' + (yes.map(r => '<li>' + esc(r.name) + ' <small style="color:#667">' + esc(r.at) + '</small></li>').join('') || '<li>nessuno</li>') + '</ul>' +
+                      '<p style="color:#c00000;font-weight:900">Non hanno ancora letto (' + no.length + ')</p><ul class="read-list">' + (no.map(n => '<li>' + esc(n) + '</li>').join('') || '<li>nessuno</li>') + '</ul>',
+                okText: 'Chiudi'
+            });
+        });
         function renderMsgs() {
             // elenco destinatari
             const sel = $('msgTo'), cur = sel.value;
@@ -1880,7 +2189,8 @@
             const box = $('msgList');
             box.innerHTML = messages.length ? messages.map(m => `<div class="bubble">
                 <div class="bubble-meta"><span>${esc(m.at)} &middot; <span class="tag">${m.to === 'ALL' ? 'a tutti' : 'a ' + esc(m.to)}</span></span><button type="button" data-msgdel="${esc(m.id)}" title="Elimina il messaggio">Elimina</button></div>
-                <div class="bubble-text">${esc(m.text)}</div></div>`).join('') : '<div class="chat-empty">Nessun messaggio pubblicato.</div>';
+                <div class="bubble-text">${esc(m.text)}</div>
+                <button type="button" class="read-btn" data-readers="msg:${esc(m.id)}">${readLabel(m, m.to === 'ALL' ? null : m.to)}</button></div>`).join('') : '<div class="chat-empty">Nessun messaggio pubblicato.</div>';
             box.scrollTop = box.scrollHeight;
         }
         async function loadMsgs() {
@@ -1924,16 +2234,64 @@
         const PROC_MAX = 10 * 1024 * 1024;
         function procView(p) { return 'https://drive.google.com/file/d/' + encodeURIComponent(p.fileId) + '/view'; }
         function fmtKb(kb) { const n = Number(kb) || 0; return n >= 1024 ? (Math.round(n / 102.4) / 10).toString().replace('.', ',') + ' MB' : n + ' KB'; }
+        function procCats() { return [...new Set(['Generale', 'Sicurezza', 'Magazzino', 'Cassa', 'Vendita'].concat(procs.map(p => p.category || 'Generale')))].sort(); }
         function renderProcs() {
             if (procPass !== adminPassword) { procPass = adminPassword; loadProcs(); return; }
             $('procCount').textContent = procs.length;
-            $('procList').innerHTML = procs.length ? procs.map(p => `<div class="proc-item">
+            $('procCats').innerHTML = procCats().map(c => `<option value="${esc(c)}">`).join('');
+            const cats = [...new Set(procs.map(p => p.category || 'Generale'))].sort();
+            $('procList').innerHTML = procs.length ? cats.map(c => `<div class="proc-cat">${esc(c)}</div>` + procs.filter(p => (p.category || 'Generale') === c).map(p => `<div class="proc-item">
                 <div class="proc-ico">PDF</div>
-                <div class="proc-txt"><b>${esc(p.title)}</b><span>${esc(p.at)} &middot; ${fmtKb(p.kb)}</span>${p.shared === 'no' ? '<span style="display:block;color:#c00000">⚠ Google non ha permesso la condivisione: i dipendenti non riescono ad aprirlo.</span>' : ''}</div>
+                <div class="proc-txt"><b>${esc(p.title)}</b><span>${esc(p.at)} &middot; ${fmtKb(p.kb)}</span>${p.shared === 'no' ? '<span style="display:block;color:#c00000">⚠ Google non ha permesso la condivisione: i dipendenti non riescono ad aprirlo.</span>' : ''}
+                    <button type="button" class="read-btn" data-readers="proc:${esc(p.id)}">${readLabel(p, null)}</button></div>
                 <div class="proc-act"><a class="btn btn-tool" href="${procView(p)}" target="_blank" rel="noopener">Apri</a>
-                    <button type="button" class="btn btn-danger" data-procdel="${esc(p.id)}">Elimina</button></div></div>`).join('')
+                    <button type="button" class="btn btn-del" data-procedit="${esc(p.id)}">Modifica</button>
+                    <button type="button" class="btn btn-del" data-procrepl="${esc(p.id)}">Sostituisci PDF</button>
+                    <button type="button" class="btn btn-danger" data-procdel="${esc(p.id)}">Elimina</button></div></div>`).join('')).join('')
                 : '<div class="chat-empty">Nessuna procedura caricata.</div>';
         }
+        function readPdf(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('lettura')); r.readAsDataURL(f); }); }
+        // modifica titolo/categoria e sostituzione del PDF
+        document.addEventListener('click', async e => {
+            const ed = e.target.closest('[data-procedit]'), rp = e.target.closest('[data-procrepl]');
+            if (ed) {
+                const p = procs.find(x => x.id === ed.dataset.procedit); if (!p) return;
+                const r = await showModal({
+                    title: 'Modifica procedura',
+                    body: '<div class="form-group"><label>Titolo</label><input type="text" id="peTitle" maxlength="80" value="' + esc(p.title) + '"></div>' +
+                          '<div class="form-group"><label>Categoria</label><input type="text" id="peCat" maxlength="40" list="procCats" value="' + esc(p.category || 'Generale') + '"></div>',
+                    okText: 'Salva', collect: () => ({ title: $('peTitle').value.trim(), category: $('peCat').value.trim() || 'Generale' }), validate: v => v.title ? '' : 'Scrivi il titolo.'
+                });
+                if (!r) return;
+                try {
+                    const d = await jsonp({ action: 'procedit', id: p.id, title: r.title, category: r.category, password: adminPassword }, 20000);
+                    if (d && d.ok) { p.title = r.title; p.category = r.category; renderProcs(); toast('Procedura aggiornata.'); } else toast('Modifica non riuscita: ' + ((d && d.error) || 'errore'), 6000);
+                } catch (err) { toast('Impossibile contattare il server.'); }
+            }
+            if (rp) { $('procReplFile').dataset.id = rp.dataset.procrepl; $('procReplFile').value = ''; $('procReplFile').click(); }
+        });
+        $('procReplFile').addEventListener('change', async () => {
+            const f = $('procReplFile').files[0], id = $('procReplFile').dataset.id, p = procs.find(x => x.id === id);
+            if (!f || !p || procBusy) return;
+            if (f.size > PROC_MAX) { toast('Il PDF è troppo grande: massimo 10 MB.', 6000); return; }
+            if (!confirm('Sostituire il PDF di "' + p.title + '" con "' + f.name + '"?\n\nLe conferme di lettura ripartono da zero: i dipendenti dovranno rileggere la nuova versione.')) return;
+            procBusy = true;
+            try {
+                const data = await readPdf(f);
+                if (data.slice(0, 5) !== 'JVBER') { toast('Questo file non sembra un PDF valido.', 6000); procBusy = false; return; }
+                const before = p.fileId;
+                toast('Sostituzione in corso: non chiudere la pagina…', 8000);
+                await schPost({ password: adminPassword, op: 'procreplace', id, filename: f.name, data }, 120000);
+                const ok = await schVerify(async () => {
+                    const d = await jsonp({ action: 'proclist', password: adminPassword }, 15000);
+                    const np = d && d.ok && (d.procedures || []).find(x => x.id === id);
+                    if (np && np.fileId !== before) { procs = d.procedures; return true; }
+                    return false;
+                }, 20);
+                if (ok) { renderProcs(); toast('PDF sostituito.', 5000); } else toast('Sostituzione non confermata: riprova.', 8000);
+            } catch (err) { toast('Sostituzione non riuscita.', 6000); }
+            procBusy = false;
+        });
         async function loadProcs() {
             try {
                 const d = await jsonp({ action: 'proclist', password: adminPassword }, 20000);
@@ -1959,13 +2317,13 @@
                 if (data.slice(0, 5) !== 'JVBER') { toast('Questo file non sembra un PDF valido.', 6000); throw new Error('nopdf'); }
                 const id = String(Date.now());
                 toast('Caricamento in corso: non chiudere la pagina…', 8000);
-                await schPost({ password: adminPassword, op: 'procadd', id, title, filename: f.name, data }, 120000);
+                await schPost({ password: adminPassword, op: 'procadd', id, title, category: $('procCat').value.trim() || 'Generale', filename: f.name, data }, 120000);
                 const ok = await schVerify(async () => {
                     const d = await jsonp({ action: 'proclist', password: adminPassword }, 15000);
                     if (d && d.ok && (d.procedures || []).some(p => p.id === id)) { procs = d.procedures; return true; }
                     return false;
                 }, 20);
-                if (ok) { $('procTitle').value = ''; $('procFile').value = ''; $('procInfo').textContent = ''; renderProcs(); toast('Procedura caricata: i dipendenti la vedono nella loro app.', 6000); }
+                if (ok) { $('procTitle').value = ''; $('procCat').value = ''; $('procFile').value = ''; $('procInfo').textContent = ''; renderProcs(); toast('Procedura caricata: i dipendenti la vedono nella loro app.', 6000); }
                 else toast('Caricamento non confermato: controlla la connessione e riprova.', 8000);
             } catch (err) { if (err.message !== 'nopdf') toast('Caricamento non riuscito.', 6000); }
             procBusy = false; btn.disabled = false; btn.textContent = 'Carica PDF';
@@ -2118,6 +2476,7 @@
 
         /* ---------- rete ---------- */
         function schPost(fields, maxWait) {
+            if (fields && fields.password !== undefined && adminUser && !fields.user) fields = Object.assign({ user: adminUser }, fields);
             return new Promise(resolve => {
                 const name = 'schf_' + Date.now() + Math.floor(Math.random() * 1e4);
                 const ifr = document.createElement('iframe'); ifr.name = name; ifr.style.display = 'none';
@@ -2155,7 +2514,7 @@
                 try { cfg = d.config ? JSON.parse(d.config) : null; } catch (e) {}
                 schCfg = (cfg && cfg.sections && cfg.legend) ? cfg : schDefaultCfg();
                 schFixLegend();
-                schWeeks = d.weeks || [];
+                schWeeks = d.weeks || []; schTpl = d.templates || [];
                 const saved = lsGet('sch_start');
                 schStart = /^\d{4}-\d{2}-\d{2}$/.test(saved || '') ? saved : isoOf(schMonday(new Date()));
                 await schLoadWeek(schStart);
@@ -2313,6 +2672,7 @@
             }
             if (a === 'today') return schGoto(isoOf(schMonday(new Date())));
             if (a === 'copy') return schCopy();
+            if (a === 'tpl') return schTemplatesDialog();
             if (a === 'verify') return schVerifyApply();
             if (a === 'addperm') return schAddPerm();
             if (a === 'delperm') { schData.permits.splice(+b.dataset.k, 1); schDirty = true; drawSchedule(); return; }
@@ -2354,6 +2714,68 @@
             if (r) { schData.permits.push(r); schDirty = true; drawSchedule(); }
         }
 
+
+        /* ---------- dati pubblicati insieme all'immagine: servono a "I miei turni" nell'app dei dipendenti ---------- */
+        function schSnapshot(hrs) {
+            const who = schLabelMap(), legend = {};
+            schCfg.legend.forEach(l => { if (l.label) legend[l.v] = l.label; });
+            return JSON.stringify({ rows: schCloneRows(schData.rows), who, legend, hrs: !!hrs });
+        }
+
+        /* ---------- Modelli di orario ---------- */
+        let schTpl = [];
+        async function schTemplatesDialog() {
+            const has = schTpl.length > 0;
+            const res = showModal({
+                title: 'Modelli di orario',
+                body: '<div class="sch-mode">' +
+                    '<label class="' + (has ? 'on' : '') + '"><input type="radio" name="tpMode" value="apply"' + (has ? ' checked' : ' disabled') + '> Applica un modello</label>' +
+                    '<label class="' + (has ? '' : 'on') + '"><input type="radio" name="tpMode" value="save"' + (has ? '' : ' checked') + '> Salva questa settimana come modello</label>' +
+                    '<label><input type="radio" name="tpMode" value="del"' + (has ? '' : ' disabled') + '> Elimina un modello</label></div>' +
+                    '<div class="form-group" id="tpSelG"><label>Modello</label><select id="tpSel">' + schTpl.map(t => '<option>' + esc(t) + '</option>').join('') + '</select></div>' +
+                    '<div class="form-group" id="tpNameG"><label>Nome del modello</label><input type="text" id="tpName" maxlength="40" placeholder="es. Settimana standard"></div>' +
+                    '<p class="hint-left" id="tpHint"></p>',
+                okText: 'Conferma',
+                collect: () => ({ mode: document.querySelector('input[name=tpMode]:checked').value, sel: $('tpSel').value, name: $('tpName').value.replace(/\s+/g, ' ').trim() }),
+                validate: v => v.mode === 'save' ? (v.name ? '' : 'Scrivi il nome del modello.') : (v.sel ? '' : 'Scegli il modello.')
+            });
+            const mb = $('modalBody');
+            const upd = () => {
+                const m = document.querySelector('input[name=tpMode]:checked').value;
+                mb.querySelectorAll('.sch-mode label').forEach(l => l.classList.toggle('on', l.querySelector('input').checked));
+                $('tpSelG').hidden = m === 'save'; $('tpNameG').hidden = m !== 'save';
+                $('tpHint').textContent = m === 'apply' ? 'Gli orari del modello vengono messi nella settimana che stai guardando: li controlli e poi premi Salva.'
+                    : (m === 'save' ? 'Salva gli orari che vedi adesso con un nome, per riusarli quando vuoi. Se il nome esiste già, il modello viene aggiornato.' : 'Il modello viene eliminato. Le settimane già compilate non cambiano.');
+            };
+            mb.onchange = upd; upd();
+            const r = await res; mb.onchange = null;
+            if (!r) return;
+            try {
+                if (r.mode === 'apply') {
+                    const d = await jsonp({ action: 'schedtplget', tname: r.sel, password: adminPassword }, 20000);
+                    const pd = d && d.ok && d.data ? JSON.parse(d.data) : null;
+                    if (!pd || !pd.rows) { toast('Modello non trovato.'); return; }
+                    schData.rows = schCloneRows(pd.rows); schEnsure(); schDirty = true; drawSchedule();
+                    toast('Modello "' + r.sel + '" applicato. Controlla e premi Salva.', 7000);
+                } else if (r.mode === 'save') {
+                    const json = JSON.stringify({ rows: schCloneRows(schData.rows) });
+                    const ok = await schPostVerified({ op: 'schedtplsave', tname: r.name, data: json }, async () => {
+                        const d = await jsonp({ action: 'schedtplget', tname: r.name, password: adminPassword }, 15000);
+                        if (d && d.ok && d.data === json) { schTpl = d.templates || schTpl; return true; }
+                        return false;
+                    });
+                    toast(ok ? 'Modello "' + r.name + '" salvato.' : 'Salvataggio del modello non confermato.', 6000);
+                } else {
+                    if (!confirm('Eliminare il modello "' + r.sel + '"?')) return;
+                    const ok = await schPostVerified({ op: 'schedtpldel', tname: r.sel }, async () => {
+                        const d = await jsonp({ action: 'schedinit', password: adminPassword }, 15000);
+                        if (d && d.ok && (d.templates || []).indexOf(r.sel) < 0) { schTpl = d.templates || []; return true; }
+                        return false;
+                    });
+                    toast(ok ? 'Modello eliminato.' : 'Eliminazione non confermata.', 6000);
+                }
+            } catch (err) { toast('Operazione non riuscita: controlla la connessione.'); }
+        }
 
         /* ---------- Copia / Ripeti ---------- */
         function schWeekLabel(iso) { const d = parseISO(iso); return schDmy(d) + ' → ' + schDmy(addDays(d, 6)); }
@@ -2735,7 +3157,7 @@
             try {
                 const img = schRender({ coverage: r.cov, permits: r.per, hours: r.hrs }).toDataURL('image/png');
                 const tok = String(Date.now());
-                const ok = await schPostVerified({ op: 'schedpublish', week: schStart, data: JSON.stringify(schData), img, tok, notify: r.mail ? '1' : '0', opts: JSON.stringify({ cov: r.cov, per: r.per, hrs: r.hrs }) }, async () => {
+                const ok = await schPostVerified({ op: 'schedpublish', week: schStart, data: JSON.stringify(schData), img, tok, notify: r.mail ? '1' : '0', opts: JSON.stringify({ cov: r.cov, per: r.per, hrs: r.hrs }), snap: schSnapshot(r.hrs) }, async () => {
                     const d = await jsonp({ action: 'schedcheck', week: schStart, password: adminPassword }, 15000);
                     return d && d.ok && d.published && d.tok === tok;
                 });
