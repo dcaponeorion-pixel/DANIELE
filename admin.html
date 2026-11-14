@@ -509,10 +509,9 @@
         body.sch-wide #schCard { padding: 14px; }
         /* ===== Dipendenti + Messaggi ===== */
         .emp-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
-        @media (min-width: 1200px) { .emp-grid { grid-template-columns: minmax(0, 1fr) 420px; } }
+        
         .side-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
         .side-col .card { margin: 0; }
-        body.emp-wide .container { max-width: 1600px !important; }
         .chat-list { display: flex; flex-direction: column; gap: 10px; max-height: 46vh; min-height: 120px; overflow-y: auto; padding: 10px; background: #f4f6fa; border: 1px solid var(--border); border-radius: 10px; -webkit-overflow-scrolling: touch; }
         .chat-empty { color: #666; font-weight: 700; text-align: center; padding: 18px 6px; }
         .bubble { align-self: flex-end; max-width: 92%; background: #fff4ec; border: 1px solid var(--unieuro-orange); border-radius: 14px 4px 14px 14px; padding: 9px 12px; }
@@ -576,8 +575,27 @@
         .seg2 label { flex: 1; margin: 0; display: flex; gap: 6px; align-items: center; border: 2px solid var(--border); border-radius: 8px; padding: 8px; font-weight: 800; cursor: pointer; }
         .seg2 input { width: 18px; height: 18px; margin: 0; }
         /* ===== Andamento negozio ===== */
-        .admin-tabs-wrap .tabs-row2 { flex: 1 1 100%; margin: 0; }
-        .tabs-row2 .tab { flex: 0 1 320px; letter-spacing: .5px; }
+        .admin-tabs-wrap .tabs { flex: 1 1 100%; }
+        .admin-tabs-wrap .tab { text-transform: uppercase; letter-spacing: .4px; font-size: 0.86rem; padding: 12px 10px; }
+        .nav-home-container { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+        .dash-actions[hidden] { display: none !important; }
+        .dash-actions { align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+        .dash-actions .btn { padding: 8px 14px; min-height: 0; }
+        @media (max-width: 768px) { .nav-home-container { align-items: stretch; } .dash-actions { justify-content: center; } }
+        .emp-grid > .card { margin: 0; }
+        @media (min-width: 1000px) {
+            .chat-card, .proc-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 24px; align-items: start; }
+            .chat-card > h2, .chat-card > p, .proc-card > h2, .proc-card > p { grid-column: 1 / -1; }
+            .chat-card .chat-compose, .proc-card .chat-compose { margin-top: 0; }
+        }
+        .chat-card .chat-list { max-height: 300px; }
+        .proc-card .proc-list, .con-card .proc-list { max-height: none; overflow: visible; }
+        .con-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+        .con-grid .proc-item { margin: 0; align-items: flex-start; }
+        .con-tag { display: inline-block; background: var(--unieuro-blue); color: #fff !important; border-radius: 10px; padding: 0 8px; font-size: 0.66rem !important; font-weight: 900; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
+        .pager { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+        .pg { min-width: 36px; height: 36px; border: 2px solid #000; border-radius: 10px; background: #fff; color: var(--unieuro-blue-dark); font-weight: 900; cursor: pointer; font-family: inherit; }
+        .pg.on { background: var(--unieuro-orange); color: #fff; }
         .shop-card { max-width: 720px; margin-left: auto; margin-right: auto; }
         .shop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 10px; }
         .shop-grid label { text-align: center; text-transform: uppercase; font-weight: 900; }
@@ -643,6 +661,11 @@
             <h1>Admin Panel - HR</h1>
         </div>
         <div class="nav-home-container">
+            <div class="dash-actions no-print" id="dashActions" hidden>
+                <span class="who" id="whoAmI"></span>
+                <button type="button" class="btn" id="reloadBtn">Aggiorna</button>
+                <button type="button" class="btn btn-danger" onclick="logoutAdmin()">Logout</button>
+            </div>
             <a href="index.html" class="nav-home-btn">Torna al Portale Dipendenti</a>
         </div>
     </header>
@@ -676,14 +699,7 @@
                     <button type="button" class="tab" data-tab="schedule">Orario</button>
                     <button type="button" class="tab" data-tab="employees">Dipendenti</button>
                     <button type="button" class="tab" data-tab="log">Registro</button>
-                </div>
-                <div class="dash-actions">
-                    <span class="who" id="whoAmI"></span>
-                    <button type="button" class="btn" id="reloadBtn">Aggiorna</button>
-                    <button type="button" class="btn btn-danger" onclick="logoutAdmin()">Logout</button>
-                </div>
-                <div class="tabs tabs-row2">
-                    <button type="button" class="tab" data-tab="shop">ANDAMENTO NEGOZIO</button>
+                    <button type="button" class="tab" data-tab="shop">Andamento negozio</button>
                 </div>
             </div>
 
@@ -885,22 +901,6 @@
             <!-- ============ DIPENDENTI ============ -->
             <section class="tab-panel" id="tab-employees">
                 <div class="emp-grid">
-                <div class="card">
-                    <h2>Gestione dipendenti <span class="count" id="empCount">0</span></h2>
-                    <p class="hint-left">Ogni dipendente accede con il proprio <b>PIN</b>. L'<b>email</b> serve per avvisarlo quando approvi o rifiuti una richiesta.</p>
-                    <div class="toolbar">
-                        <button type="button" class="btn btn-small btn-success" id="empAdd">+ Aggiungi dipendente</button>
-                        <label class="selall"><input type="checkbox" id="showPins"> Mostra i PIN</label>
-                    </div>
-                    <div class="table-responsive">
-                        <table>
-                            <thead><tr><th>Nome</th><th>Email</th><th>PIN</th><th>Stato</th><th>Azioni</th></tr></thead>
-                            <tbody id="empBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="side-col">
                 <!-- MESSAGGI AI DIPENDENTI -->
                 <div class="card chat-card">
                     <h2>Messaggi ai dipendenti <span class="count" id="msgCount">0</span></h2>
@@ -917,6 +917,14 @@
                             <button type="button" class="btn btn-small" id="msgSend">Pubblica</button>
                         </div>
                     </div>
+                </div>
+
+                <!-- CONTATTI UTILI -->
+                <div class="card con-card">
+                    <h2>Numeri e contatti utili <span class="count" id="conCount">0</span></h2>
+                    <p class="hint-left">La <b>Rubrica</b> che i dipendenti vedono nella loro app, sotto i Messaggi (possono solo leggerla e condividere un contatto).</p>
+                    <div class="toolbar"><button type="button" class="btn btn-small btn-success" id="conAdd">+ Aggiungi contatto</button></div>
+                    <div class="proc-list" id="conList"><div class="chat-empty">Carico i contatti…</div></div>
                 </div>
 
                 <!-- PROCEDURE (PDF) -->
@@ -940,14 +948,22 @@
                     </div>
                 </div>
 
-                <!-- CONTATTI UTILI -->
+                <!-- GESTIONE DIPENDENTI -->
                 <div class="card">
-                    <h2>Numeri e contatti utili <span class="count" id="conCount">0</span></h2>
-                    <p class="hint-left">La rubrica che i dipendenti vedono nella scheda <b>Utility</b> della loro app (possono solo leggerla).</p>
-                    <div class="toolbar"><button type="button" class="btn btn-small btn-success" id="conAdd">+ Aggiungi contatto</button></div>
-                    <div class="proc-list" id="conList"><div class="chat-empty">Carico i contatti…</div></div>
+                    <h2>Gestione dipendenti <span class="count" id="empCount">0</span></h2>
+                    <p class="hint-left">Ogni dipendente accede con il proprio <b>PIN</b>. L'<b>email</b> serve per avvisarlo quando approvi o rifiuti una richiesta.</p>
+                    <div class="toolbar">
+                        <button type="button" class="btn btn-small btn-success" id="empAdd">+ Aggiungi dipendente</button>
+                        <label class="selall"><input type="checkbox" id="showPins"> Mostra i PIN</label>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Nome</th><th>Email</th><th>PIN</th><th>Stato</th><th>Azioni</th></tr></thead>
+                            <tbody id="empBody"></tbody>
+                        </table>
+                    </div>
                 </div>
-                </div><!-- /side-col -->
+
                 </div><!-- /emp-grid -->
             </section>
             <!-- ============ ANDAMENTO NEGOZIO ============ -->
@@ -1269,7 +1285,7 @@
                     employees = b.employees || [];
                     lastLoad = Date.now();
                     $('admin-login').style.display = 'none';
-                    $('admin-dashboard').style.display = 'block';
+                    $('admin-dashboard').style.display = 'block'; $('dashActions').hidden = false;
                     refreshEmployeeSelects();
                     initStatsControls();
                     showTab('requests');
@@ -1287,7 +1303,7 @@
         function logoutAdmin() {
             adminPassword = ''; adminUser = ''; requests = []; employees = []; selected = new Set(); messages = []; msgPass = ''; procs = []; procPass = ''; swaps = []; logRows = [];
             $('admin-login').style.display = 'block';
-            $('admin-dashboard').style.display = 'none';
+            $('admin-dashboard').style.display = 'none'; $('dashActions').hidden = true;
             $('adminPass').value = '';
             setLoginMsg('', '');
         }
@@ -2202,16 +2218,34 @@
             } catch (err) { toast('Impossibile contattare il server.', 6000); }
         });
 
+        /* ================= PAGINE NUMERATE (contatti e procedure) ================= */
+        const pageNo = { con: 1, proc: 1 }, PAGE_SIZE = { con: 6, proc: 5 };
+        function pageSlice(key, list) {
+            const n = Math.max(1, Math.ceil(list.length / PAGE_SIZE[key]));
+            pageNo[key] = Math.min(Math.max(1, pageNo[key]), n);
+            return list.slice((pageNo[key] - 1) * PAGE_SIZE[key], pageNo[key] * PAGE_SIZE[key]);
+        }
+        function pagerHtml(key, total) {
+            const n = Math.ceil(total / PAGE_SIZE[key]);
+            return n > 1 ? '<div class="pager">' + Array.from({ length: n }, (_, i) => `<button type="button" class="pg ${i + 1 === pageNo[key] ? 'on' : ''}" data-pg="${key}:${i + 1}" aria-label="Pagina ${i + 1}">${i + 1}</button>`).join('') + '</div>' : '';
+        }
+        document.addEventListener('click', e => {
+            const b = e.target.closest('[data-pg]'); if (!b) return;
+            const [key, n] = b.dataset.pg.split(':'); pageNo[key] = +n;
+            if (key === 'con') renderContacts(); else renderProcs();
+        });
+
         /* ================= NUMERI E CONTATTI UTILI ================= */
         let contacts = [], conPass = null;
         const CON_CATS = ['Assistenza', 'Centri riparazione', 'Sede', 'Fornitori', 'Generale'];
         function renderContacts() {
             if (conPass !== adminPassword) { conPass = adminPassword; loadContacts(); return; }
             $('conCount').textContent = contacts.length;
-            const cats = [...new Set(contacts.map(c => c.category))].sort();
-            $('conList').innerHTML = contacts.length ? cats.map(k => `<div class="proc-cat">${esc(k)}</div>` + contacts.filter(c => c.category === k).sort((x, y) => x.name.localeCompare(y.name)).map(c => `<div class="proc-item">
-                <div class="proc-txt"><b>${esc(c.name)}</b>${c.phone ? `<span style="display:block">☎ ${esc(c.phone)}</span>` : ''}${c.email ? `<span style="display:block">✉ ${esc(c.email)}</span>` : ''}${c.note ? `<span style="display:block">${esc(c.note)}</span>` : ''}</div>
-                <div class="proc-act"><button type="button" class="btn btn-tool" data-conedit="${esc(c.id)}">Modifica</button><button type="button" class="btn btn-danger" data-condel="${esc(c.id)}">Elimina</button></div></div>`).join('')).join('')
+            const sorted = contacts.slice().sort((x, y) => x.category.localeCompare(y.category) || x.name.localeCompare(y.name));
+            const view = pageSlice('con', sorted);
+            $('conList').innerHTML = contacts.length ? '<div class="con-grid">' + view.map(c => `<div class="proc-item">
+                <div class="proc-txt"><span class="con-tag">${esc(c.category)}</span><b>${esc(c.name)}</b>${c.phone ? `<span style="display:block">☎ ${esc(c.phone)}</span>` : ''}${c.email ? `<span style="display:block">✉ ${esc(c.email)}</span>` : ''}${c.note ? `<span style="display:block">${esc(c.note)}</span>` : ''}</div>
+                <div class="proc-act"><button type="button" class="btn btn-tool" data-conedit="${esc(c.id)}">Modifica</button><button type="button" class="btn btn-danger" data-condel="${esc(c.id)}">Elimina</button></div></div>`).join('') + '</div>' + pagerHtml('con', sorted.length)
                 : '<div class="chat-empty">Nessun contatto. Premi "+ Aggiungi contatto".</div>';
         }
         async function loadContacts() {
@@ -2372,15 +2406,17 @@
             if (procPass !== adminPassword) { procPass = adminPassword; loadProcs(); return; }
             $('procCount').textContent = procs.length;
             $('procCats').innerHTML = procCats().map(c => `<option value="${esc(c)}">`).join('');
-            const cats = [...new Set(procs.map(p => p.category || 'Generale'))].sort();
-            $('procList').innerHTML = procs.length ? cats.map(c => `<div class="proc-cat">${esc(c)}</div>` + procs.filter(p => (p.category || 'Generale') === c).map(p => `<div class="proc-item">
+            const sortedP = procs.slice().sort((x, y) => (x.category || 'Generale').localeCompare(y.category || 'Generale') || x.title.localeCompare(y.title));
+            const viewP = pageSlice('proc', sortedP);
+            const cats = [...new Set(viewP.map(p => p.category || 'Generale'))];
+            $('procList').innerHTML = procs.length ? cats.map(c => `<div class="proc-cat">${esc(c)}</div>` + viewP.filter(p => (p.category || 'Generale') === c).map(p => `<div class="proc-item">
                 <div class="proc-ico">PDF</div>
                 <div class="proc-txt"><b>${esc(p.title)}</b><span>${esc(p.at)} &middot; ${fmtKb(p.kb)}</span>${p.shared === 'no' ? '<span style="display:block;color:#c00000">⚠ Google non ha permesso la condivisione: i dipendenti non riescono ad aprirlo.</span>' : ''}
                     <button type="button" class="read-btn" data-readers="proc:${esc(p.id)}">${readLabel(p, null)}</button></div>
                 <div class="proc-act"><a class="btn btn-tool" href="${procView(p)}" target="_blank" rel="noopener">Apri</a>
                     <button type="button" class="btn btn-del" data-procedit="${esc(p.id)}">Modifica</button>
                     <button type="button" class="btn btn-del" data-procrepl="${esc(p.id)}">Sostituisci PDF</button>
-                    <button type="button" class="btn btn-danger" data-procdel="${esc(p.id)}">Elimina</button></div></div>`).join('')).join('')
+                    <button type="button" class="btn btn-danger" data-procdel="${esc(p.id)}">Elimina</button></div></div>`).join('')).join('') + pagerHtml('proc', sortedP.length)
                 : '<div class="chat-empty">Nessuna procedura caricata.</div>';
         }
         function readPdf(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('lettura')); r.readAsDataURL(f); }); }
