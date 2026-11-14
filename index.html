@@ -266,6 +266,34 @@
         /* ===== Messaggi (a destra su schermi larghi, sotto su telefono) ===== */
         .app-grid { display: block; }
         .msg-card { margin-top: 20px; }
+        #rubCard { margin-top: 0; margin-bottom: 18px; padding-top: 14px; padding-bottom: 14px; }
+        #rubCard .msg-head { margin-bottom: 10px; flex-wrap: wrap; }
+        .rub-tools { display: flex; gap: 8px; align-items: center; flex: 1 1 220px; min-width: 0; justify-content: flex-end; }
+        .rub-tools .btn { flex: none; width: auto; }
+        .rub-tools input { flex: 1 1 100px; min-width: 0; width: auto; max-width: 320px; margin: 0; padding: 9px 12px; border: 2px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 0.95rem; }
+        .rub-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+        .rub-grid .chat-empty { grid-column: 1 / -1; }
+        .rub-tile { border: 2px solid var(--border); border-radius: 18px; background: #f8fafc; padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; text-align: center; min-width: 0; }
+        .rub-tile .cat { align-self: center; background: var(--unieuro-blue); color: #fff; border-radius: 10px; padding: 1px 9px; font-size: 0.66rem; font-weight: 900; text-transform: uppercase; letter-spacing: .4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rub-tile b { font-size: 0.95rem; overflow-wrap: anywhere; line-height: 1.2; }
+        .rub-tile .tel { font-weight: 900; color: var(--unieuro-blue-dark); font-size: 0.95rem; overflow-wrap: anywhere; }
+        .rub-tile small { font-weight: 700; color: #556; font-size: 0.74rem; overflow-wrap: anywhere; }
+        .rub-act { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-top: auto; padding-top: 6px; }
+        .rub-act .btn { width: auto; margin: 0; padding: 6px 9px; font-size: 0.74rem; text-decoration: none; }
+        .pager { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+        .pager:empty { display: none; }
+        .pg { min-width: 36px; height: 36px; border: 2px solid #000; border-radius: 10px; background: #fff; color: var(--unieuro-blue-dark); font-weight: 900; cursor: pointer; font-family: inherit; }
+        .pg.on { background: var(--unieuro-orange); color: #fff; }
+        @media (max-width: 1000px) { .rub-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (max-width: 600px) { .rub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .util-sec { border: 2px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 18px; background: #fbfcfe; }
+        .util-sec:last-child { margin-bottom: 0; }
+        .util-title { font-size: 1.15rem; color: var(--unieuro-orange); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; }
+        .util-sec .util-box { background: #fff; }
+        #procCard .msg-head { margin-bottom: 12px; }
+        #procCard .proc-list { max-height: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+        #procCard .proc-cat, #procCard .chat-empty { grid-column: 1 / -1; }
+        #procCard .proc-item { background: #fff; }
         #msgCard { margin-top: 0; margin-bottom: 18px; padding-top: 14px; padding-bottom: 14px; }
         #msgCard .msg-head { margin-bottom: 8px; }
         #msgCard .chat-list { max-height: 150px; }
@@ -301,9 +329,6 @@
         .bubble-text { white-space: pre-wrap; overflow-wrap: anywhere; font-weight: 600; font-size: 0.95rem; line-height: 1.35; }
         @media (min-width: 1000px) {
             body.logged .container { max-width: 1280px; }
-            body.logged:not(.sch-wide) .app-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
-            body.logged:not(.sch-wide) .side-col { display: flex; flex-direction: column; gap: 20px; }
-            body.logged:not(.sch-wide) #procCard { margin-top: 0; }
             body.logged:not(.sch-wide) #msgBanner { display: none; }
         }
         .proc-list { display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -433,6 +458,19 @@
                 <div class="chat-list" id="msgList"><div class="chat-empty">Nessun messaggio.</div></div>
             </aside>
 
+            <!-- RUBRICA -->
+            <aside class="card msg-card" id="rubCard">
+                <div class="msg-head">
+                    <h2>Rubrica</h2>
+                    <div class="rub-tools">
+                        <input type="search" id="conSearch" placeholder="Cerca per nome…" aria-label="Cerca per nome">
+                        <button type="button" class="btn btn-small btn-tool" id="conRefresh">Aggiorna</button>
+                    </div>
+                </div>
+                <div class="rub-grid" id="conList"><div class="chat-empty">Nessun contatto.</div></div>
+                <div class="pager" id="conPager"></div>
+            </aside>
+
             <div class="app-grid">
             <div class="app-main">
 
@@ -505,6 +543,8 @@
             <!-- UTILITY -->
             <div class="card tab-panel" id="panel-util">
                 <h2>Utility</h2>
+                <section class="util-sec">
+                <h3 class="util-title">Scontistiche</h3>
                 <div class="util-grid">
                 <div class="util-box">
                     <h3>Calcolo IVA 4%</h3>
@@ -539,14 +579,14 @@
                     <button type="button" class="btn btn-small btn-del" id="scReset" style="margin-top:14px">Azzera</button>
                 </div>
                 </div>
-                <div class="util-box" style="margin-top:16px">
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-                        <h3 style="margin:0">Numeri e contatti utili</h3>
-                        <button type="button" class="btn btn-small btn-tool" id="conRefresh" style="width:auto">Aggiorna</button>
+                </section>
+                <section class="util-sec" id="procCard">
+                    <div class="msg-head">
+                        <h3 class="util-title" style="margin:0">Procedure</h3>
+                        <button type="button" class="btn btn-small btn-tool" id="refreshProc">Aggiorna</button>
                     </div>
-                    <input type="search" id="conSearch" placeholder="Cerca un contatto…" style="margin:12px 0; width:100%; padding:12px; border:2px solid var(--border); border-radius:8px; font-family:inherit; font-size:1rem; box-sizing:border-box;">
-                    <div id="conList"><div class="chat-empty">Nessun contatto.</div></div>
-                </div>
+                    <div class="proc-list" id="procList"><div class="chat-empty">Nessuna procedura.</div></div>
+                </section>
             </div>
 
             <!-- CAMBIO TURNO -->
@@ -591,17 +631,6 @@
             </div>
             </div><!-- /app-main -->
 
-            <div class="side-col">
-
-            <!-- PROCEDURE -->
-            <aside class="card msg-card" id="procCard">
-                <div class="msg-head">
-                    <h2>Procedure</h2>
-                    <button type="button" class="btn btn-small btn-tool" id="refreshProc">Aggiorna</button>
-                </div>
-                <div class="proc-list" id="procList"><div class="chat-empty">Nessuna procedura.</div></div>
-            </aside>
-            </div><!-- /side-col -->
             </div><!-- /app-grid -->
         </div>
     </div>
@@ -787,6 +816,7 @@
             loadSchedule(true);
             loadMsgs(false);
             loadProcs(false);
+            loadContacts(false);
             loadSwaps(false);
             loadMyShift();
         }
@@ -821,7 +851,7 @@
             $('panel-schedule').classList.toggle('active', tab === 'schedule');
             $('panel-swap').classList.toggle('active', tab === 'swap');
             $('panel-util').classList.toggle('active', tab === 'util');
-            if (tab === 'util') loadContacts(false);
+            if (tab === 'util') loadProcs(false);
             if (tab === 'swap') loadSwaps(false);
             if (tab === 'mine') { markSeen(); }
             if (tab === 'schedule') { if (schCurrent) schMarkSeen(schCurrent); else loadSchedule(false); }
@@ -904,7 +934,7 @@
         }
         $('refreshMsg').addEventListener('click', () => loadMsgs(true));
         $('msgBannerBtn').addEventListener('click', () => { $('msgCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-        document.addEventListener('visibilitychange', () => { if (!document.hidden && session && Date.now() - msgLast > 30000) { loadMsgs(false); loadProcs(false); loadSwaps(false); loadMyShift(); } });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && session && Date.now() - msgLast > 30000) { loadMsgs(false); loadProcs(false); loadContacts(false); loadSwaps(false); loadMyShift(); } });
         setInterval(() => { if (!document.hidden && session && Date.now() - msgLast > 180000) loadMsgs(false); }, 60000);
 
         /* ---------- Allegati alle richieste ---------- */
@@ -1103,26 +1133,48 @@
         $('scIn').addEventListener('input', scCalc); $('scPct').addEventListener('change', scCalc);
         $('scReset').addEventListener('click', () => { $('scIn').value = ''; scCalc(); $('scIn').focus(); });
 
-        /* ---------- Utility: numeri e contatti utili (sola lettura) ---------- */
-        let contacts = [];
+        /* ---------- Rubrica (sola lettura): riquadri, 5 per pagina, ricerca e condivisione ---------- */
+        let contacts = [], conPage = 1;
+        const CON_PER_PAGE = 5;
+        function conText(c) { return [c.name, c.phone ? 'Tel: ' + c.phone : '', c.email ? 'Email: ' + c.email : '', c.note].filter(Boolean).join('\n'); }
         function renderContacts() {
             const q = $('conSearch').value.trim().toLowerCase();
-            const list = contacts.filter(c => !q || (c.name + ' ' + c.category + ' ' + c.phone + ' ' + c.email + ' ' + c.note).toLowerCase().indexOf(q) >= 0);
-            const cats = [...new Set(list.map(c => c.category))].sort();
-            $('conList').innerHTML = list.length ? cats.map(k => `<div class="proc-cat">${esc(k)}</div>` + list.filter(c => c.category === k).sort((x, y) => x.name.localeCompare(y.name)).map(c => `<div class="con-item">
-                <div style="flex:1 1 180px;min-width:0"><b>${esc(c.name)}</b>${c.phone ? `<small>☎ ${esc(c.phone)}</small>` : ''}${c.email ? `<small>✉ ${esc(c.email)}</small>` : ''}${c.note ? `<small>${esc(c.note)}</small>` : ''}</div>
-                <div class="con-act">${c.phone ? `<a class="btn btn-success" href="tel:${esc(c.phone.replace(/[^0-9+]/g, ''))}">Chiama</a>` : ''}${c.email ? `<a class="btn btn-tool" href="mailto:${esc(c.email)}">Email</a>` : ''}</div></div>`).join('')).join('')
+            const list = contacts.filter(c => !q || (c.name + ' ' + c.category + ' ' + c.phone).toLowerCase().indexOf(q) >= 0)
+                .sort((x, y) => x.name.localeCompare(y.name));
+            const pages = Math.max(1, Math.ceil(list.length / CON_PER_PAGE));
+            conPage = Math.min(Math.max(1, conPage), pages);
+            const view = list.slice((conPage - 1) * CON_PER_PAGE, conPage * CON_PER_PAGE);
+            $('conList').innerHTML = view.length ? view.map(c => `<div class="rub-tile" data-cid="${esc(c.id)}">
+                <span class="cat">${esc(c.category)}</span><b>${esc(c.name)}</b>
+                ${c.phone ? `<span class="tel">☎ ${esc(c.phone)}</span>` : ''}${c.email ? `<small>✉ ${esc(c.email)}</small>` : ''}${c.note ? `<small>${esc(c.note)}</small>` : ''}
+                <div class="rub-act">${c.phone ? `<a class="btn btn-success" href="tel:${esc(c.phone.replace(/[^0-9+]/g, ''))}">Chiama</a>` : ''}${c.email ? `<a class="btn btn-tool" href="mailto:${esc(c.email)}">Email</a>` : ''}<button type="button" class="btn btn-del" data-share="1">Condividi</button></div></div>`).join('')
                 : '<div class="chat-empty">' + (contacts.length ? 'Nessun contatto trovato.' : 'Nessun contatto.') + '</div>';
+            $('conPager').innerHTML = pages > 1 ? Array.from({ length: pages }, (_, i) => `<button type="button" class="pg ${i + 1 === conPage ? 'on' : ''}" data-pg="${i + 1}" aria-label="Pagina ${i + 1}">${i + 1}</button>`).join('') : '';
         }
         async function loadContacts(manual) {
             if (!session) return;
             try {
                 const d = await jsonp({ action: 'contacts', name: session.name, pin: session.pin }, 20000);
                 if (d && d.ok) { contacts = d.contacts || []; renderContacts(); }
-            } catch (err) { if (manual) toast('Impossibile caricare i contatti. Riprova.'); }
+            } catch (err) { if (manual) toast('Impossibile caricare la rubrica. Riprova.'); }
         }
-        $('conSearch').addEventListener('input', renderContacts);
+        $('conSearch').addEventListener('input', () => { conPage = 1; renderContacts(); });
         $('conRefresh').addEventListener('click', () => loadContacts(true));
+        $('conPager').addEventListener('click', e => { const b = e.target.closest('[data-pg]'); if (b) { conPage = +b.dataset.pg; renderContacts(); } });
+        $('conList').addEventListener('click', async e => {
+            const b = e.target.closest('[data-share]'); if (!b) return;
+            const c = contacts.find(x => x.id === b.closest('.rub-tile').dataset.cid); if (!c) return;
+            const text = conText(c);
+            try {
+                if (navigator.share) { await navigator.share({ title: c.name, text: text }); return; }
+            } catch (err) { if (err && err.name === 'AbortError') return; }
+            try { await navigator.clipboard.writeText(text); toast('Contatto copiato: incollalo dove vuoi (WhatsApp, SMS, email…).', 5000); }
+            catch (err) {
+                const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); toast('Contatto copiato: incollalo dove vuoi.', 5000); } catch (e2) { toast('Condivisione non disponibile su questo dispositivo.'); }
+                ta.remove();
+            }
+        });
 
         /* ---------- Procedure (PDF) ---------- */
         let procs = [];
