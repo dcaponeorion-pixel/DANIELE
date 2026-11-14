@@ -590,6 +590,7 @@
         }
         .chat-card .chat-list { max-height: 300px; }
         .proc-card .proc-list, .con-card .proc-list { max-height: none; overflow: visible; }
+        .con-search { flex: 1 1 260px; max-width: 520px; margin: 0; padding: 9px 12px; border: 2px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 0.95rem; }
         .con-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
         .con-grid .proc-item { margin: 0; align-items: flex-start; }
         .con-tag { display: inline-block; background: var(--unieuro-blue); color: #fff !important; border-radius: 10px; padding: 0 8px; font-size: 0.66rem !important; font-weight: 900; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
@@ -923,7 +924,8 @@
                 <div class="card con-card">
                     <h2>Numeri e contatti utili <span class="count" id="conCount">0</span></h2>
                     <p class="hint-left">La <b>Rubrica</b> che i dipendenti vedono nella loro app, sotto i Messaggi (possono solo leggerla e condividere un contatto).</p>
-                    <div class="toolbar"><button type="button" class="btn btn-small btn-success" id="conAdd">+ Aggiungi contatto</button></div>
+                    <div class="toolbar"><button type="button" class="btn btn-small btn-success" id="conAdd">+ Aggiungi contatto</button>
+                        <input type="search" id="conSearchA" class="con-search" placeholder="Cerca per nome, cognome o note (es. tecnico, fornitore)…" aria-label="Cerca nei contatti"></div>
                     <div class="proc-list" id="conList"><div class="chat-empty">Carico i contatti…</div></div>
                 </div>
 
@@ -2238,16 +2240,25 @@
         /* ================= NUMERI E CONTATTI UTILI ================= */
         let contacts = [], conPass = null;
         const CON_CATS = ['Assistenza', 'Centri riparazione', 'Sede', 'Fornitori', 'Generale'];
+        // ricerca per parole chiave: tutte le parole scritte devono comparire nel nome o nelle note (o nel numero)
+        function conNorm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+        function conMatch(c, q) {
+            const words = conNorm(q).split(/\s+/).filter(Boolean); if (!words.length) return true;
+            const hay = conNorm(c.name + ' ' + c.note + ' ' + c.phone + ' ' + c.email);
+            return words.every(w => hay.indexOf(w) >= 0);
+        }
         function renderContacts() {
             if (conPass !== adminPassword) { conPass = adminPassword; loadContacts(); return; }
-            $('conCount').textContent = contacts.length;
-            const sorted = contacts.slice().sort((x, y) => x.category.localeCompare(y.category) || x.name.localeCompare(y.name));
+            const q = $('conSearchA').value;
+            const sorted = contacts.filter(c => conMatch(c, q)).sort((x, y) => x.name.localeCompare(y.name));
+            $('conCount').textContent = q.trim() ? sorted.length + '/' + contacts.length : contacts.length;
             const view = pageSlice('con', sorted);
-            $('conList').innerHTML = contacts.length ? '<div class="con-grid">' + view.map(c => `<div class="proc-item">
-                <div class="proc-txt"><span class="con-tag">${esc(c.category)}</span><b>${esc(c.name)}</b>${c.phone ? `<span style="display:block">☎ ${esc(c.phone)}</span>` : ''}${c.email ? `<span style="display:block">✉ ${esc(c.email)}</span>` : ''}${c.note ? `<span style="display:block">${esc(c.note)}</span>` : ''}</div>
+            $('conList').innerHTML = sorted.length ? '<div class="con-grid">' + view.map(c => `<div class="proc-item">
+                <div class="proc-txt"><b>${esc(c.name)}</b>${c.phone ? `<span style="display:block">☎ ${esc(c.phone)}</span>` : ''}${c.email ? `<span style="display:block">✉ ${esc(c.email)}</span>` : ''}${c.note ? `<span style="display:block">${esc(c.note)}</span>` : ''}</div>
                 <div class="proc-act"><button type="button" class="btn btn-tool" data-conedit="${esc(c.id)}">Modifica</button><button type="button" class="btn btn-danger" data-condel="${esc(c.id)}">Elimina</button></div></div>`).join('') + '</div>' + pagerHtml('con', sorted.length)
-                : '<div class="chat-empty">Nessun contatto. Premi "+ Aggiungi contatto".</div>';
+                : '<div class="chat-empty">' + (contacts.length ? 'Nessun contatto trovato con queste parole.' : 'Nessun contatto. Premi "+ Aggiungi contatto".') + '</div>';
         }
+        $('conSearchA').addEventListener('input', () => { pageNo.con = 1; renderContacts(); });
         async function loadContacts() {
             try {
                 const d = await jsonp({ action: 'contactlist', password: adminPassword }, 20000);
@@ -2256,16 +2267,15 @@
             } catch (err) { $('conList').innerHTML = '<div class="chat-empty">Impossibile caricare i contatti.</div>'; }
         }
         async function editContact(c) {
-            const cats = [...new Set(CON_CATS.concat(contacts.map(x => x.category)))];
             const r = await showModal({
                 title: c ? 'Modifica contatto' : 'Nuovo contatto',
-                body: '<div class="form-group"><label>Nome</label><input type="text" id="coName" maxlength="80" placeholder="es. Assistenza Samsung" value="' + esc(c ? c.name : '') + '"></div>' +
-                      '<div class="form-group"><label>Categoria</label><input type="text" id="coCat" maxlength="40" list="coCats" placeholder="es. Assistenza, Centri riparazione" value="' + esc(c ? c.category : '') + '"><datalist id="coCats">' + cats.map(k => '<option value="' + esc(k) + '">').join('') + '</datalist></div>' +
+                body: '<div class="form-group"><label>Nome e cognome</label><input type="text" id="coName" maxlength="80" placeholder="es. Carmelo Leotta" value="' + esc(c ? c.name : '') + '"></div>' +
                       '<div class="form-group"><label>Telefono</label><input type="tel" id="coPhone" maxlength="40" value="' + esc(c ? c.phone : '') + '"></div>' +
                       '<div class="form-group"><label>Email (facoltativa)</label><input type="email" id="coEmail" maxlength="80" value="' + esc(c ? c.email : '') + '"></div>' +
-                      '<div class="form-group"><label>Note (facoltative: orari, indirizzo, referente…)</label><input type="text" id="coNote" maxlength="200" value="' + esc(c ? c.note : '') + '"></div>',
+                      '<div class="form-group"><label>Note</label><input type="text" id="coNote" maxlength="200" placeholder="es. tecnico condizionatori, centro assistenza, fornitore…" value="' + esc(c ? c.note : '') + '"></div>' +
+                      '<p class="hint-left">Scrivi nelle note che cosa fa (tecnico, centro assistenza, fornitore…): sono le parole con cui lo ritroverai dalla ricerca.</p>',
                 okText: 'Salva',
-                collect: () => ({ cname: $('coName').value.trim(), category: $('coCat').value.trim(), phone: $('coPhone').value.trim(), email: $('coEmail').value.trim(), note: $('coNote').value.trim() }),
+                collect: () => ({ cname: $('coName').value.trim(), category: '', phone: $('coPhone').value.trim(), email: $('coEmail').value.trim(), note: $('coNote').value.trim() }),
                 validate: v => !v.cname ? 'Scrivi il nome.' : (!v.phone && !v.email && !v.note ? 'Inserisci almeno il telefono, l\'email o una nota.' : '')
             });
             if (!r) return;
