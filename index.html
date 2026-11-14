@@ -273,6 +273,11 @@
         #msgBanner { display: none !important; }
         .util-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; align-items: start; }
         .util-box { border: 2px solid var(--border); border-radius: 14px; padding: 16px; min-width: 0; }
+        .con-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: #f8fafc; margin-bottom: 8px; }
+        .con-item b { display: block; overflow-wrap: anywhere; }
+        .con-item small { display: block; font-weight: 700; color: #556; overflow-wrap: anywhere; }
+        .con-act { display: flex; gap: 6px; flex-wrap: wrap; }
+        .con-act .btn { width: auto; margin: 0; padding: 8px 14px; font-size: 0.85rem; text-decoration: none; }
         .util-num { font-size: 1.6rem; font-weight: 900; text-align: center; color: var(--unieuro-blue-dark); }
         .iva-tot b { overflow-wrap: anywhere; }
         .util-box h3 { color: var(--unieuro-blue-dark); font-size: 1.1rem; margin-bottom: 4px; }
@@ -534,6 +539,14 @@
                     <button type="button" class="btn btn-small btn-del" id="scReset" style="margin-top:14px">Azzera</button>
                 </div>
                 </div>
+                <div class="util-box" style="margin-top:16px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+                        <h3 style="margin:0">Numeri e contatti utili</h3>
+                        <button type="button" class="btn btn-small btn-tool" id="conRefresh" style="width:auto">Aggiorna</button>
+                    </div>
+                    <input type="search" id="conSearch" placeholder="Cerca un contatto…" style="margin:12px 0; width:100%; padding:12px; border:2px solid var(--border); border-radius:8px; font-family:inherit; font-size:1rem; box-sizing:border-box;">
+                    <div id="conList"><div class="chat-empty">Nessun contatto.</div></div>
+                </div>
             </div>
 
             <!-- CAMBIO TURNO -->
@@ -607,7 +620,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9iovgSmmRbFzt4_F-3FnEy0zJgLE9jbkI3I-HHpmYmwtMf05_AUwzkWBip78DMrBY/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKiTxHVyn_KXakfMZelmSw2Rn6goEx-ZsHizgl5-AasSVJexPFMCOL1Uip-aiQHjk_/exec";
 
         // Chiamata verso Google Script: prima via JSONP (tag script), se non va via fetch (piano B)
         function jsonpOnce(params, timeoutMs) {
@@ -779,7 +792,7 @@
         }
 
         function logout(message) {
-            session = null; myReqs = []; schWeeks = []; schCurrent = ''; schDataUrl = ''; msgs = []; procs = []; renderProcs(); mySwaps = []; myWeeks = []; renderMyShift(); $('swapBadge').hidden = true;
+            session = null; myReqs = []; schWeeks = []; schCurrent = ''; schDataUrl = ''; msgs = []; procs = []; renderProcs(); contacts = []; renderContacts(); mySwaps = []; myWeeks = []; renderMyShift(); $('swapBadge').hidden = true;
             document.body.classList.remove('logged'); $('msgBanner').hidden = true; renderMsgs();
             lsSet('hr_cred', null); ssSet('hr_cred_s', null);
             $('appView').style.display = 'none';
@@ -808,6 +821,7 @@
             $('panel-schedule').classList.toggle('active', tab === 'schedule');
             $('panel-swap').classList.toggle('active', tab === 'swap');
             $('panel-util').classList.toggle('active', tab === 'util');
+            if (tab === 'util') loadContacts(false);
             if (tab === 'swap') loadSwaps(false);
             if (tab === 'mine') { markSeen(); }
             if (tab === 'schedule') { if (schCurrent) schMarkSeen(schCurrent); else loadSchedule(false); }
@@ -1088,6 +1102,27 @@
         }
         $('scIn').addEventListener('input', scCalc); $('scPct').addEventListener('change', scCalc);
         $('scReset').addEventListener('click', () => { $('scIn').value = ''; scCalc(); $('scIn').focus(); });
+
+        /* ---------- Utility: numeri e contatti utili (sola lettura) ---------- */
+        let contacts = [];
+        function renderContacts() {
+            const q = $('conSearch').value.trim().toLowerCase();
+            const list = contacts.filter(c => !q || (c.name + ' ' + c.category + ' ' + c.phone + ' ' + c.email + ' ' + c.note).toLowerCase().indexOf(q) >= 0);
+            const cats = [...new Set(list.map(c => c.category))].sort();
+            $('conList').innerHTML = list.length ? cats.map(k => `<div class="proc-cat">${esc(k)}</div>` + list.filter(c => c.category === k).sort((x, y) => x.name.localeCompare(y.name)).map(c => `<div class="con-item">
+                <div style="flex:1 1 180px;min-width:0"><b>${esc(c.name)}</b>${c.phone ? `<small>☎ ${esc(c.phone)}</small>` : ''}${c.email ? `<small>✉ ${esc(c.email)}</small>` : ''}${c.note ? `<small>${esc(c.note)}</small>` : ''}</div>
+                <div class="con-act">${c.phone ? `<a class="btn btn-success" href="tel:${esc(c.phone.replace(/[^0-9+]/g, ''))}">Chiama</a>` : ''}${c.email ? `<a class="btn btn-tool" href="mailto:${esc(c.email)}">Email</a>` : ''}</div></div>`).join('')).join('')
+                : '<div class="chat-empty">' + (contacts.length ? 'Nessun contatto trovato.' : 'Nessun contatto.') + '</div>';
+        }
+        async function loadContacts(manual) {
+            if (!session) return;
+            try {
+                const d = await jsonp({ action: 'contacts', name: session.name, pin: session.pin }, 20000);
+                if (d && d.ok) { contacts = d.contacts || []; renderContacts(); }
+            } catch (err) { if (manual) toast('Impossibile caricare i contatti. Riprova.'); }
+        }
+        $('conSearch').addEventListener('input', renderContacts);
+        $('conRefresh').addEventListener('click', () => loadContacts(true));
 
         /* ---------- Procedure (PDF) ---------- */
         let procs = [];
