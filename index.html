@@ -270,14 +270,15 @@
         #rubCard .msg-head { margin-bottom: 10px; flex-wrap: wrap; }
         .rub-tools { display: flex; gap: 8px; align-items: center; flex: 1 1 220px; min-width: 0; justify-content: flex-end; }
         .rub-tools .btn { flex: none; width: auto; }
-        .rub-tools input { flex: 1 1 100px; min-width: 0; width: auto; max-width: 320px; margin: 0; padding: 9px 12px; border: 2px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 0.95rem; }
+        .rub-tools input { flex: 1 1 100px; min-width: 0; width: auto; max-width: 420px; margin: 0; padding: 9px 12px; border: 2px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 0.95rem; }
         .rub-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
         .rub-grid .chat-empty { grid-column: 1 / -1; }
         .rub-tile { border: 2px solid var(--border); border-radius: 18px; background: #f8fafc; padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; text-align: center; min-width: 0; }
         .rub-tile .cat { align-self: center; background: var(--unieuro-blue); color: #fff; border-radius: 10px; padding: 1px 9px; font-size: 0.66rem; font-weight: 900; text-transform: uppercase; letter-spacing: .4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .rub-tile b { font-size: 0.95rem; overflow-wrap: anywhere; line-height: 1.2; }
         .rub-tile .tel { font-weight: 900; color: var(--unieuro-blue-dark); font-size: 0.95rem; overflow-wrap: anywhere; }
-        .rub-tile small { font-weight: 700; color: #556; font-size: 0.74rem; overflow-wrap: anywhere; }
+        .rub-tile small { font-weight: 700; color: #556; font-size: 0.78rem; overflow-wrap: anywhere; }
+        .rub-tile { padding-top: 14px; }
         .rub-act { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-top: auto; padding-top: 6px; }
         .rub-act .btn { width: auto; margin: 0; padding: 6px 9px; font-size: 0.74rem; text-decoration: none; }
         .pager { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
@@ -463,7 +464,7 @@
                 <div class="msg-head">
                     <h2>Rubrica</h2>
                     <div class="rub-tools">
-                        <input type="search" id="conSearch" placeholder="Cerca per nome…" aria-label="Cerca per nome">
+                        <input type="search" id="conSearch" placeholder="Cerca per nome o note (es. tecnico)…" aria-label="Cerca per nome o note">
                         <button type="button" class="btn btn-small btn-tool" id="conRefresh">Aggiorna</button>
                     </div>
                 </div>
@@ -1138,14 +1139,16 @@
         const CON_PER_PAGE = 5;
         function conText(c) { return [c.name, c.phone ? 'Tel: ' + c.phone : '', c.email ? 'Email: ' + c.email : '', c.note].filter(Boolean).join('\n'); }
         function renderContacts() {
-            const q = $('conSearch').value.trim().toLowerCase();
-            const list = contacts.filter(c => !q || (c.name + ' ' + c.category + ' ' + c.phone).toLowerCase().indexOf(q) >= 0)
+            // ricerca per parole chiave: tutte le parole scritte devono comparire nel nome o nelle note (o nel numero)
+            const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const words = norm($('conSearch').value).split(/\s+/).filter(Boolean);
+            const list = contacts.filter(c => { const hay = norm(c.name + ' ' + c.note + ' ' + c.phone + ' ' + c.email); return words.every(w => hay.indexOf(w) >= 0); })
                 .sort((x, y) => x.name.localeCompare(y.name));
             const pages = Math.max(1, Math.ceil(list.length / CON_PER_PAGE));
             conPage = Math.min(Math.max(1, conPage), pages);
             const view = list.slice((conPage - 1) * CON_PER_PAGE, conPage * CON_PER_PAGE);
             $('conList').innerHTML = view.length ? view.map(c => `<div class="rub-tile" data-cid="${esc(c.id)}">
-                <span class="cat">${esc(c.category)}</span><b>${esc(c.name)}</b>
+                <b>${esc(c.name)}</b>
                 ${c.phone ? `<span class="tel">☎ ${esc(c.phone)}</span>` : ''}${c.email ? `<small>✉ ${esc(c.email)}</small>` : ''}${c.note ? `<small>${esc(c.note)}</small>` : ''}
                 <div class="rub-act">${c.phone ? `<a class="btn btn-success" href="tel:${esc(c.phone.replace(/[^0-9+]/g, ''))}">Chiama</a>` : ''}${c.email ? `<a class="btn btn-tool" href="mailto:${esc(c.email)}">Email</a>` : ''}<button type="button" class="btn btn-del" data-share="1">Condividi</button></div></div>`).join('')
                 : '<div class="chat-empty">' + (contacts.length ? 'Nessun contatto trovato.' : 'Nessun contatto.') + '</div>';
