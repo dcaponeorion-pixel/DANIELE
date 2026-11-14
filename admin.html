@@ -575,6 +575,19 @@
         .seg2 { display: flex; gap: 8px; }
         .seg2 label { flex: 1; margin: 0; display: flex; gap: 6px; align-items: center; border: 2px solid var(--border); border-radius: 8px; padding: 8px; font-weight: 800; cursor: pointer; }
         .seg2 input { width: 18px; height: 18px; margin: 0; }
+        /* ===== Andamento negozio ===== */
+        .admin-tabs-wrap .tabs-row2 { flex: 1 1 100%; margin: 0; }
+        .tabs-row2 .tab { flex: 0 1 320px; letter-spacing: .5px; }
+        .shop-card { max-width: 720px; margin-left: auto; margin-right: auto; }
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 10px; }
+        .shop-grid label { text-align: center; text-transform: uppercase; font-weight: 900; }
+        .shop-grid input { text-align: center; font-size: 1.4rem; font-weight: 900; }
+        .shop-result { margin-top: 14px; padding: 24px; border-radius: 18px; text-align: center; background: #f4f6fa; border: 3px solid var(--border); transition: background .2s, border-color .2s; }
+        .shop-lab { display: block; font-weight: 900; color: #556; text-transform: uppercase; font-size: 0.85rem; letter-spacing: .5px; }
+        .shop-val { font-size: 3.4rem; font-weight: 900; color: #333; line-height: 1.2; }
+        .shop-msg { font-weight: 900; font-size: 1.05rem; color: #556; }
+        .shop-result.bad { background: #fff0f0; border-color: var(--danger); } .shop-result.bad .shop-val, .shop-result.bad .shop-msg { color: #c00000; }
+        .shop-result.good { background: #f0fff4; border-color: var(--success); } .shop-result.good .shop-val, .shop-result.good .shop-msg { color: #1c7a34; }
         .sch-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 14px; font-size: 0.9rem; }
         .sch-box h3 { font-size: 1rem; color: var(--unieuro-blue-dark); margin-bottom: 8px; }
         .sch-box ul { margin: 0; padding-left: 18px; }
@@ -668,6 +681,9 @@
                     <span class="who" id="whoAmI"></span>
                     <button type="button" class="btn" id="reloadBtn">Aggiorna</button>
                     <button type="button" class="btn btn-danger" onclick="logoutAdmin()">Logout</button>
+                </div>
+                <div class="tabs tabs-row2">
+                    <button type="button" class="tab" data-tab="shop">ANDAMENTO NEGOZIO</button>
                 </div>
             </div>
 
@@ -926,6 +942,27 @@
                 </div><!-- /side-col -->
                 </div><!-- /emp-grid -->
             </section>
+            <!-- ============ ANDAMENTO NEGOZIO ============ -->
+            <section class="tab-panel" id="tab-shop">
+                <div class="card shop-card">
+                    <h2>Andamento negozio</h2>
+                    <p class="hint-left">Analisi incidenza accessori telefonia: quante pellicole vengono vendute rispetto ai telefoni. Sotto il 30% è da migliorare, dal 30% in su è in obiettivo, oltre il 40% è ottimo.</p>
+                    <div class="shop-grid">
+                        <div class="form-group"><label for="shopTel">Telefoni venduti</label><input type="number" id="shopTel" min="0" inputmode="numeric" placeholder="0"></div>
+                        <div class="form-group"><label for="shopPel">Pellicole vendute</label><input type="number" id="shopPel" min="0" inputmode="numeric" placeholder="0"></div>
+                    </div>
+                    <div class="shop-result" id="shopBox">
+                        <span class="shop-lab">Incidenza pellicole su telefoni</span>
+                        <div class="shop-val" id="shopVal">0,00%</div>
+                        <div class="shop-msg" id="shopMsg">Inserisci i due numeri.</div>
+                    </div>
+                    <div class="toolbar" style="justify-content:center; margin-top:18px">
+                        <button type="button" class="btn btn-small btn-tool" id="shopPdf">Salva PDF analisi</button>
+                        <button type="button" class="btn btn-small btn-del" id="shopReset">Azzera</button>
+                    </div>
+                </div>
+            </section>
+
             <!-- ============ REGISTRO E ACCOUNT ============ -->
             <section class="tab-panel" id="tab-log">
                 <div class="card">
@@ -2155,6 +2192,45 @@
                 if (d && d.ok) { adminPassword = r.n1; msgPass = adminPassword; procPass = adminPassword; schPass = adminPassword; toast('Password cambiata. Dal prossimo accesso usa quella nuova.', 7000); loadLog(); }
                 else toast('Password non cambiata: ' + ((d && d.error) || 'errore'), 7000);
             } catch (err) { toast('Impossibile contattare il server.', 6000); }
+        });
+
+        /* ================= ANDAMENTO NEGOZIO ================= */
+        function shopCalc() {
+            const a = parseFloat($('shopTel').value), b = parseFloat($('shopPel').value);
+            if (!(a > 0) || isNaN(b) || b < 0) return null;
+            const v = b / a * 100;
+            return { a, b, v, txt: v.toFixed(2).replace('.', ',') + '%', good: v >= 30,
+                     msg: v < 30 ? '⚠ Sotto obiettivo (meno del 30%)' : (v <= 40 ? '✓ In obiettivo (tra 30% e 40%)' : '✓ Ottimo risultato (oltre il 40%)') };
+        }
+        function shopDraw() {
+            const r = shopCalc(), box = $('shopBox');
+            box.className = 'shop-result' + (r ? (r.good ? ' good' : ' bad') : '');
+            $('shopVal').textContent = r ? r.txt : '0,00%';
+            $('shopMsg').textContent = r ? r.msg : 'Inserisci i due numeri.';
+        }
+        $('shopTel').addEventListener('input', shopDraw); $('shopPel').addEventListener('input', shopDraw);
+        $('shopReset').addEventListener('click', () => { $('shopTel').value = ''; $('shopPel').value = ''; shopDraw(); });
+        $('shopPdf').addEventListener('click', () => {
+            const r = shopCalc(); if (!r) { toast('Inserisci prima i telefoni e le pellicole vendute.'); return; }
+            const W = 1400, H = 900, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+            const c = cv.getContext('2d'), F = "'Gotham Rounded Bold','Segoe UI',Arial,sans-serif";
+            c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
+            c.fillStyle = '#002b66'; c.fillRect(0, 0, W, 150); c.fillStyle = '#ff6600'; c.fillRect(0, 150, W, 8);
+            try { c.drawImage(document.querySelector('.logo'), 40, 25, 100, 100); } catch (e) {}
+            c.fillStyle = '#fff'; c.textBaseline = 'middle'; c.textAlign = 'left';
+            c.font = 'bold 46px ' + F; c.fillText('ANDAMENTO NEGOZIO', 170, 58);
+            c.font = 'bold 24px ' + F; c.fillText('Analisi incidenza accessori telefonia · ' + nowLabel().replace('Stampato il ', ''), 170, 108);
+            const cell = (x, lab, val) => { c.fillStyle = '#f4f6fa'; c.fillRect(x, 210, 600, 170); c.strokeStyle = '#c9d2e0'; c.lineWidth = 3; c.strokeRect(x, 210, 600, 170);
+                c.textAlign = 'center'; c.fillStyle = '#556'; c.font = 'bold 26px ' + F; c.fillText(lab, x + 300, 255); c.fillStyle = '#111'; c.font = 'bold 76px ' + F; c.fillText(val, x + 300, 325); };
+            cell(80, 'TELEFONI VENDUTI', String(r.a)); cell(720, 'PELLICOLE VENDUTE', String(r.b));
+            const col = r.good ? '#1c7a34' : '#c00000';
+            c.fillStyle = r.good ? '#f0fff4' : '#fff0f0'; c.fillRect(80, 430, 1240, 380); c.strokeStyle = col; c.lineWidth = 6; c.strokeRect(80, 430, 1240, 380);
+            c.textAlign = 'center'; c.fillStyle = '#556'; c.font = 'bold 28px ' + F; c.fillText('INCIDENZA PELLICOLE SU TELEFONI', W / 2, 485);
+            c.fillStyle = col; c.font = 'bold 170px ' + F; c.fillText(r.txt, W / 2, 610);
+            c.font = 'bold 40px ' + F; c.fillText(r.msg.replace(/^[⚠✓]\s*/, ''), W / 2, 750);
+            c.fillStyle = '#667'; c.font = '20px ' + F; c.textAlign = 'left'; c.fillText('HR Orion', 80, 860);
+            saveBlob(makePdfFromCanvas(cv), 'Analisi_Vendite_' + isoOf(new Date()) + '.pdf');
+            toast('PDF scaricato.');
         });
 
         /* ================= MESSAGGI AI DIPENDENTI ================= */
