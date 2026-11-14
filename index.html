@@ -266,11 +266,24 @@
         /* ===== Messaggi (a destra su schermi larghi, sotto su telefono) ===== */
         .app-grid { display: block; }
         .msg-card { margin-top: 20px; }
+        #msgCard { margin-top: 0; margin-bottom: 18px; padding-top: 14px; padding-bottom: 14px; }
+        #msgCard .msg-head { margin-bottom: 8px; }
+        #msgCard .chat-list { max-height: 150px; }
+        #msgCard .bubble { max-width: 100%; align-self: stretch; }
+        #msgBanner { display: none !important; }
+        .util-box { border: 2px solid var(--border); border-radius: 14px; padding: 16px; max-width: 560px; }
+        .util-box h3 { color: var(--unieuro-blue-dark); font-size: 1.1rem; margin-bottom: 4px; }
+        #ivaIn { font-size: 1.6rem; font-weight: 900; text-align: center; color: var(--unieuro-blue-dark); }
+        .iva-line { display: flex; justify-content: space-between; gap: 10px; padding: 10px 4px; border-bottom: 1px solid #eee; font-weight: 700; }
+        .iva-line b { color: var(--unieuro-blue-dark); white-space: nowrap; }
+        .iva-tot { margin-top: 14px; background: var(--unieuro-orange); color: #fff; border: 2px solid #000; border-radius: 14px; padding: 18px 12px; text-align: center; }
+        .iva-tot span { display: block; text-transform: uppercase; font-weight: 900; font-size: 0.9rem; letter-spacing: .5px; }
+        .iva-tot b { display: block; font-size: 2.6rem; line-height: 1.15; }
         .side-col { min-width: 0; }
         .msg-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
         .msg-head h2 { margin: 0; border: 0; padding: 0; }
         .msg-head .btn { width: auto; }
-        .chat-list { display: flex; flex-direction: column; gap: 10px; max-height: 46vh; overflow-y: auto; padding: 4px 2px; -webkit-overflow-scrolling: touch; }
+        .chat-list { display: flex; flex-direction: column; gap: 10px; max-height: 46vh; scrollbar-gutter: stable; overflow-y: auto; padding: 4px 2px; -webkit-overflow-scrolling: touch; }
         .chat-empty { color: #666; font-weight: 700; text-align: center; padding: 18px 6px; }
         .bubble { align-self: flex-start; max-width: 94%; background: #eef3fb; border: 1px solid #c9d6ee; border-radius: 4px 14px 14px 14px; padding: 10px 12px; }
         .bubble.new { background: #fff4ec; border-color: var(--unieuro-orange); }
@@ -282,7 +295,7 @@
             body.logged .container { max-width: 1280px; }
             body.logged:not(.sch-wide) .app-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
             body.logged:not(.sch-wide) .side-col { display: flex; flex-direction: column; gap: 20px; }
-            body.logged:not(.sch-wide) .msg-card { margin-top: 0; }
+            body.logged:not(.sch-wide) #procCard { margin-top: 0; }
             body.logged:not(.sch-wide) #msgBanner { display: none; }
         }
         .proc-list { display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -395,14 +408,25 @@
                 <button type="button" class="btn btn-small" id="msgBannerBtn">Leggi</button>
             </div>
 
-            <div class="app-grid">
-            <div class="app-main">
             <div class="tabs" role="tablist">
                 <button type="button" class="tab active" data-tab="new">Nuova richiesta</button>
                 <button type="button" class="tab" data-tab="mine">Le mie richieste <span class="dot" id="mineBadge" hidden>0</span></button>
                 <button type="button" class="tab" data-tab="schedule">Orario <span class="dot" id="schBadge" hidden></span></button>
                 <button type="button" class="tab" data-tab="swap">Cambio turno <span class="dot" id="swapBadge" hidden></span></button>
+                <button type="button" class="tab" data-tab="util">Utility</button>
             </div>
+
+            <!-- MESSAGGI -->
+            <aside class="card msg-card" id="msgCard">
+                <div class="msg-head">
+                    <h2>Messaggi <span class="dot" id="msgBadge" hidden></span></h2>
+                    <button type="button" class="btn btn-small btn-tool" id="refreshMsg">Aggiorna</button>
+                </div>
+                <div class="chat-list" id="msgList"><div class="chat-empty">Nessun messaggio.</div></div>
+            </aside>
+
+            <div class="app-grid">
+            <div class="app-main">
 
             <!-- NUOVA RICHIESTA -->
             <div class="card tab-panel active" id="panel-new">
@@ -470,6 +494,25 @@
                 <div id="mineList"></div>
             </div>
 
+            <!-- UTILITY -->
+            <div class="card tab-panel" id="panel-util">
+                <h2>Utility</h2>
+                <div class="util-box">
+                    <h3>Calcolo IVA 4%</h3>
+                    <p class="type-hint" style="margin-bottom:14px">Inserisci il prezzo esposto (con IVA al 22%): ottieni il prezzo con IVA agevolata al 4%.</p>
+                    <div class="form-group">
+                        <label for="ivaIn">Importo originale (IVA 22%)</label>
+                        <input type="number" id="ivaIn" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+                    </div>
+                    <div class="iva-res" id="ivaRes" hidden>
+                        <div class="iva-line"><span>Imponibile (senza IVA)</span><b id="ivaNet">0,00 €</b></div>
+                        <div class="iva-line"><span>Quota IVA (4%)</span><b id="ivaVat">0,00 €</b></div>
+                        <div class="iva-tot"><span>Nuovo totale ivato (4%)</span><b id="ivaTot">0,00 €</b></div>
+                    </div>
+                    <button type="button" class="btn btn-small btn-del" id="ivaReset" style="margin-top:14px">Azzera</button>
+                </div>
+            </div>
+
             <!-- CAMBIO TURNO -->
             <div class="card tab-panel" id="panel-swap">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
@@ -513,14 +556,6 @@
             </div><!-- /app-main -->
 
             <div class="side-col">
-            <!-- MESSAGGI -->
-            <aside class="card msg-card" id="msgCard">
-                <div class="msg-head">
-                    <h2>Messaggi <span class="dot" id="msgBadge" hidden></span></h2>
-                    <button type="button" class="btn btn-small btn-tool" id="refreshMsg">Aggiorna</button>
-                </div>
-                <div class="chat-list" id="msgList"><div class="chat-empty">Nessun messaggio.</div></div>
-            </aside>
 
             <!-- PROCEDURE -->
             <aside class="card msg-card" id="procCard">
@@ -749,6 +784,7 @@
             $('panel-mine').classList.toggle('active', tab === 'mine');
             $('panel-schedule').classList.toggle('active', tab === 'schedule');
             $('panel-swap').classList.toggle('active', tab === 'swap');
+            $('panel-util').classList.toggle('active', tab === 'util');
             if (tab === 'swap') loadSwaps(false);
             if (tab === 'mine') { markSeen(); }
             if (tab === 'schedule') { if (schCurrent) schMarkSeen(schCurrent); else loadSchedule(false); }
@@ -1005,6 +1041,18 @@
                 if (d && d.ok) { myWeeks = d.weeks || []; renderMyShift(); }
             } catch (err) {}
         }
+
+        /* ---------- Utility: calcolo IVA 4% ---------- */
+        function ivaCalc() {
+            const v = parseFloat($('ivaIn').value);
+            if (!(v > 0)) { $('ivaRes').hidden = true; return; }
+            const net = v / 1.22, vat = net * 0.04;
+            const eur = n => n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 });
+            $('ivaNet').textContent = eur(net); $('ivaVat').textContent = eur(vat); $('ivaTot').textContent = eur(net + vat);
+            $('ivaRes').hidden = false;
+        }
+        $('ivaIn').addEventListener('input', ivaCalc);
+        $('ivaReset').addEventListener('click', () => { $('ivaIn').value = ''; ivaCalc(); $('ivaIn').focus(); });
 
         /* ---------- Procedure (PDF) ---------- */
         let procs = [];
