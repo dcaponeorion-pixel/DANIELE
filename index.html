@@ -271,9 +271,12 @@
         #msgCard .chat-list { max-height: 150px; }
         #msgCard .bubble { max-width: 100%; align-self: stretch; }
         #msgBanner { display: none !important; }
-        .util-box { border: 2px solid var(--border); border-radius: 14px; padding: 16px; max-width: 560px; }
+        .util-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; align-items: start; }
+        .util-box { border: 2px solid var(--border); border-radius: 14px; padding: 16px; min-width: 0; }
+        .util-num { font-size: 1.6rem; font-weight: 900; text-align: center; color: var(--unieuro-blue-dark); }
+        .iva-tot b { overflow-wrap: anywhere; }
         .util-box h3 { color: var(--unieuro-blue-dark); font-size: 1.1rem; margin-bottom: 4px; }
-        #ivaIn { font-size: 1.6rem; font-weight: 900; text-align: center; color: var(--unieuro-blue-dark); }
+        #ivaIn, #scIn { font-size: 1.6rem; font-weight: 900; text-align: center; color: var(--unieuro-blue-dark); }
         .iva-line { display: flex; justify-content: space-between; gap: 10px; padding: 10px 4px; border-bottom: 1px solid #eee; font-weight: 700; }
         .iva-line b { color: var(--unieuro-blue-dark); white-space: nowrap; }
         .iva-tot { margin-top: 14px; background: var(--unieuro-orange); color: #fff; border: 2px solid #000; border-radius: 14px; padding: 18px 12px; text-align: center; }
@@ -497,6 +500,7 @@
             <!-- UTILITY -->
             <div class="card tab-panel" id="panel-util">
                 <h2>Utility</h2>
+                <div class="util-grid">
                 <div class="util-box">
                     <h3>Calcolo IVA 4%</h3>
                     <p class="type-hint" style="margin-bottom:14px">Inserisci il prezzo esposto (con IVA al 22%): ottieni il prezzo con IVA agevolata al 4%.</p>
@@ -510,6 +514,25 @@
                         <div class="iva-tot"><span>Nuovo totale ivato (4%)</span><b id="ivaTot">0,00 €</b></div>
                     </div>
                     <button type="button" class="btn btn-small btn-del" id="ivaReset" style="margin-top:14px">Azzera</button>
+                </div>
+                <div class="util-box">
+                    <h3>Sconto %</h3>
+                    <p class="type-hint" style="margin-bottom:14px">Inserisci il prezzo in euro e scegli lo sconto: ottieni il prezzo scontato.</p>
+                    <div class="form-group">
+                        <label for="scIn">Prezzo (€)</label>
+                        <input type="number" id="scIn" class="util-num" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+                    </div>
+                    <div class="form-group">
+                        <label for="scPct">Sconto</label>
+                        <select id="scPct"><option value="18.04">18,04%</option><option value="22">22%</option><option value="36.08">36,08%</option></select>
+                    </div>
+                    <div class="iva-res" id="scRes" hidden>
+                        <div class="iva-line"><span>Prezzo di partenza</span><b id="scBase">0,00 €</b></div>
+                        <div class="iva-line"><span>Sconto (<span id="scLab">18,04%</span>)</span><b id="scOff">0,00 €</b></div>
+                        <div class="iva-tot"><span>Prezzo scontato</span><b id="scTot">0,00 €</b></div>
+                    </div>
+                    <button type="button" class="btn btn-small btn-del" id="scReset" style="margin-top:14px">Azzera</button>
+                </div>
                 </div>
             </div>
 
@@ -584,7 +607,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyL9RhLcHyt8vB6fE_hC4-RawnOX1ZX4oNeaKsUJPUDuTn7kTWZyvIR1ICMs0izkvuB/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9iovgSmmRbFzt4_F-3FnEy0zJgLE9jbkI3I-HHpmYmwtMf05_AUwzkWBip78DMrBY/exec";
 
         // Chiamata verso Google Script: prima via JSONP (tag script), se non va via fetch (piano B)
         function jsonpOnce(params, timeoutMs) {
@@ -1053,6 +1076,18 @@
         }
         $('ivaIn').addEventListener('input', ivaCalc);
         $('ivaReset').addEventListener('click', () => { $('ivaIn').value = ''; ivaCalc(); $('ivaIn').focus(); });
+
+        /* ---------- Utility: sconto % ---------- */
+        function scCalc() {
+            const v = parseFloat($('scIn').value), p = parseFloat($('scPct').value);
+            if (!(v > 0)) { $('scRes').hidden = true; return; }
+            const off = Math.round(v * p) / 100, eur = n => n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 });
+            $('scBase').textContent = eur(v); $('scOff').textContent = '− ' + eur(off); $('scTot').textContent = eur(v - off);
+            $('scLab').textContent = $('scPct').selectedOptions[0].textContent;
+            $('scRes').hidden = false;
+        }
+        $('scIn').addEventListener('input', scCalc); $('scPct').addEventListener('change', scCalc);
+        $('scReset').addEventListener('click', () => { $('scIn').value = ''; scCalc(); $('scIn').focus(); });
 
         /* ---------- Procedure (PDF) ---------- */
         let procs = [];
