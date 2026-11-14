@@ -266,7 +266,7 @@
         /* ===== Messaggi (a destra su schermi larghi, sotto su telefono) ===== */
         .app-grid { display: block; }
         .msg-card { margin-top: 20px; }
-        #rubCard { margin-top: 0; margin-bottom: 18px; padding-top: 14px; padding-bottom: 14px; }
+        #rubCard { margin-top: 18px; margin-bottom: 0; padding-top: 14px; padding-bottom: 14px; }
         #rubCard .msg-head { margin-bottom: 10px; flex-wrap: wrap; }
         .rub-tools { display: flex; gap: 8px; align-items: center; flex: 1 1 220px; min-width: 0; justify-content: flex-end; }
         .rub-tools .btn { flex: none; width: auto; }
@@ -459,19 +459,6 @@
                 <div class="chat-list" id="msgList"><div class="chat-empty">Nessun messaggio.</div></div>
             </aside>
 
-            <!-- RUBRICA -->
-            <aside class="card msg-card" id="rubCard">
-                <div class="msg-head">
-                    <h2>Rubrica</h2>
-                    <div class="rub-tools">
-                        <input type="search" id="conSearch" placeholder="Cerca per nome o note (es. tecnico)…" aria-label="Cerca per nome o note">
-                        <button type="button" class="btn btn-small btn-tool" id="conRefresh">Aggiorna</button>
-                    </div>
-                </div>
-                <div class="rub-grid" id="conList"><div class="chat-empty">Nessun contatto.</div></div>
-                <div class="pager" id="conPager"></div>
-            </aside>
-
             <div class="app-grid">
             <div class="app-main">
 
@@ -633,6 +620,19 @@
             </div><!-- /app-main -->
 
             </div><!-- /app-grid -->
+
+            <!-- RUBRICA -->
+            <aside class="card msg-card" id="rubCard">
+                <div class="msg-head">
+                    <h2>Rubrica</h2>
+                    <div class="rub-tools">
+                        <input type="search" id="conSearch" placeholder="Cerca per nome o note (es. tecnico)…" aria-label="Cerca per nome o note">
+                        <button type="button" class="btn btn-small btn-tool" id="conRefresh">Aggiorna</button>
+                    </div>
+                </div>
+                <div class="rub-grid" id="conList"><div class="chat-empty">Nessun contatto.</div></div>
+                <div class="pager" id="conPager"></div>
+            </aside>
         </div>
     </div>
 
