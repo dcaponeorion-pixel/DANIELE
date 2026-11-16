@@ -595,6 +595,9 @@
         .con-grid .proc-item { margin: 0; align-items: flex-start; }
         .con-tag { display: inline-block; background: var(--unieuro-blue); color: #fff !important; border-radius: 10px; padding: 0 8px; font-size: 0.66rem !important; font-weight: 900; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
         .pager { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+        .ord { display: flex; gap: 4px; } .ord .pg { min-width: 32px; height: 32px; font-size: 0.75rem; } .ord .pg:disabled { opacity: .3; cursor: default; }
+        .tab-chip { display: inline-block; border-radius: 10px; padding: 1px 8px; margin: 1px 2px 1px 0; font-size: 0.72rem; font-weight: 900; white-space: nowrap; }
+        .tab-chip.on { background: #e3f6e8; color: #1c7a34; border: 1px solid #9fd8ae; } .tab-chip.off { background: #f3f3f3; color: #999; border: 1px solid #ddd; text-decoration: line-through; }
         .pg { min-width: 36px; height: 36px; border: 2px solid #000; border-radius: 10px; background: #fff; color: var(--unieuro-blue-dark); font-weight: 900; cursor: pointer; font-family: inherit; }
         .pg.on { background: var(--unieuro-orange); color: #fff; }
         .shop-card { max-width: 720px; margin-left: auto; margin-right: auto; }
@@ -956,11 +959,13 @@
                     <p class="hint-left">Ogni dipendente accede con il proprio <b>PIN</b>. L'<b>email</b> serve per avvisarlo quando approvi o rifiuti una richiesta.</p>
                     <div class="toolbar">
                         <button type="button" class="btn btn-small btn-success" id="empAdd">+ Aggiungi dipendente</button>
+                        <button type="button" class="btn btn-small btn-tool" id="empTabsAll">Pulsanti dell'app per tutti</button>
                         <label class="selall"><input type="checkbox" id="showPins"> Mostra i PIN</label>
                     </div>
+                    <p class="hint-left">Con le frecce sposti i dipendenti nell'ordine che vuoi (vale anche per l'elenco dei nomi all'accesso). Con <b>Pulsanti</b> scegli quali pulsanti vede ciascuno nella sua app.</p>
                     <div class="table-responsive">
                         <table>
-                            <thead><tr><th>Nome</th><th>Email</th><th>PIN</th><th>Stato</th><th>Azioni</th></tr></thead>
+                            <thead><tr><th>Ordine</th><th>Nome</th><th>Email</th><th>PIN</th><th>Stato</th><th>Pulsanti dell'app</th><th>Azioni</th></tr></thead>
                             <tbody id="empBody"></tbody>
                         </table>
                     </div>
@@ -1052,7 +1057,7 @@
     <div id="toast" class="toast" hidden></div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxRepucQEYPRAdDHVD0Uj8MDpGIgwbq2nU5kqFdDqO1jWvo4CXbQFMnHID2p8mlxP0s/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIP2wc0efDSUigLAuKvWx3HRDQwHsvFaWlXNLPGLLyio-oJHsnxdQTMEH6iUFwsikO/exec";
 
         // Chiamata verso Google Script: prima via JSONP (tag script), se non va via fetch (piano B)
         function jsonpOnce(params, timeoutMs) {
@@ -1985,17 +1990,50 @@
             renderMsgs(); renderProcs(); renderContacts();
             const show = $('showPins').checked;
             $('empCount').textContent = employees.length;
-            $('empBody').innerHTML = employees.length ? employees.map(e => `<tr>
+            $('empBody').innerHTML = employees.length ? employees.map((e, i) => `<tr>
+                <td data-label="Ordine"><div class="ord"><button type="button" class="pg" data-emp="up" data-name="${esc(e.name)}" ${i === 0 ? 'disabled' : ''} title="Sposta su" aria-label="Sposta su">▲</button><button type="button" class="pg" data-emp="down" data-name="${esc(e.name)}" ${i === employees.length - 1 ? 'disabled' : ''} title="Sposta giù" aria-label="Sposta giù">▼</button></div></td>
                 <td data-label="Nome"><strong>${esc(e.name)}</strong></td>
                 <td data-label="Email">${e.email ? esc(e.email) : '<span class="muted">nessuna</span>'}</td>
                 <td data-label="PIN"><code class="pin">${show ? esc(e.pin) : '••••'}</code></td>
                 <td data-label="Stato"><span class="badge ${e.active ? 'badge-approved' : 'badge-rejected'}">${e.active ? 'Attivo' : 'Disattivato'}</span></td>
+                <td data-label="Pulsanti dell'app">${tabsSummary(e)}</td>
                 <td data-label="Azioni"><div class="row-actions">
                     <button type="button" class="btn btn-tool" data-emp="edit" data-name="${esc(e.name)}">Modifica</button>
+                    <button type="button" class="btn btn-tool" data-emp="tabs" data-name="${esc(e.name)}">Pulsanti</button>
                     <button type="button" class="btn btn-del" data-emp="newpin" data-name="${esc(e.name)}">Nuovo PIN</button>
                     <button type="button" class="btn btn-danger" data-emp="delete" data-name="${esc(e.name)}">Elimina</button>
-                </div></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;">Nessun dipendente.</td></tr>';
+                </div></td></tr>`).join('') : '<tr><td colspan="7" style="text-align:center;">Nessun dipendente.</td></tr>';
         }
+        /* ---------- ordine dei dipendenti e pulsanti dell'app ---------- */
+        const APP_TABS = [['new', 'Nuova richiesta'], ['mine', 'Le mie richieste'], ['schedule', 'Orario'], ['swap', 'Cambio turno'], ['util', 'Utility']];
+        function empTabsOf(e) { return Array.isArray(e.tabs) ? e.tabs : APP_TABS.map(t => t[0]); }
+        function tabsSummary(e) {
+            const t = empTabsOf(e);
+            if (t.length === APP_TABS.length) return '<span class="tab-chip on">Tutti</span>';
+            if (!t.length) return '<span class="tab-chip off">Nessuno</span>';
+            return APP_TABS.map(x => `<span class="tab-chip ${t.indexOf(x[0]) >= 0 ? 'on' : 'off'}">${x[1]}</span>`).join('');
+        }
+        async function empCall(params, okMsg) {
+            try {
+                const d = await jsonp(Object.assign({ password: adminPassword }, params), 30000);
+                if (d && d.ok) { employees = d.employees; refreshEmployeeSelects(); renderEmployees(); if (okMsg) toast(okMsg, 5000); }
+                else toast('Operazione non riuscita: ' + ((d && d.error) || 'aggiorna Code.gs e crea la nuova versione'), 7000);
+            } catch (err) { toast('Impossibile contattare il server.', 6000); }
+        }
+        async function editTabs(emp) {
+            const cur = emp ? empTabsOf(emp) : APP_TABS.map(t => t[0]);
+            const r = await showModal({
+                title: emp ? 'Pulsanti dell\'app di ' + emp.name : 'Pulsanti dell\'app per TUTTI i dipendenti',
+                body: '<p class="hint-left">Lascia la spunta sui pulsanti che ' + (emp ? 'questo dipendente' : 'tutti i dipendenti') + ' devono vedere nella loro app. Messaggi e Rubrica restano sempre visibili.</p>' +
+                      APP_TABS.map(t => `<label class="sch-opt"><input type="checkbox" class="tabChk" value="${t[0]}" ${cur.indexOf(t[0]) >= 0 ? 'checked' : ''}><span>${t[1]}</span></label>`).join('') +
+                      (emp ? '' : '<p class="hint-left" style="color:#b45f00">Attenzione: sostituisce la scelta fatta per ogni singolo dipendente.</p>'),
+                okText: 'Salva',
+                collect: () => ({ tabs: [...document.querySelectorAll('#modalBody .tabChk:checked')].map(c => c.value) })
+            });
+            if (!r) return;
+            await empCall({ action: 'emptabs', name: emp ? emp.name : 'ALL', tabs: r.tabs.join(',') }, 'Pulsanti aggiornati. Il dipendente li vede al prossimo accesso o aggiornamento.');
+        }
+        $('empTabsAll').addEventListener('click', () => editTabs(null));
         $('showPins').addEventListener('change', renderEmployees);
 
         async function saveEmployee(p, okMessage) {
@@ -2033,6 +2071,8 @@
             const b = e.target.closest('button[data-emp]'); if (!b) return;
             const emp = employees.find(x => x.name === b.dataset.name); if (!emp) return;
             if (b.dataset.emp === 'edit') return editEmployee(emp);
+            if (b.dataset.emp === 'tabs') return editTabs(emp);
+            if (b.dataset.emp === 'up' || b.dataset.emp === 'down') { b.disabled = true; return empCall({ action: 'empmove', name: emp.name, dir: b.dataset.emp }); }
             if (b.dataset.emp === 'newpin') {
                 if (!confirm('Generare un nuovo PIN per ' + emp.name + '?\nQuello attuale non funzionerà più.')) return;
                 const pin = randomPin();
