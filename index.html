@@ -266,6 +266,7 @@
         /* ===== Messaggi (a destra su schermi larghi, sotto su telefono) ===== */
         .app-grid { display: block; }
         .msg-card { margin-top: 20px; }
+        .tabs .tab[hidden], .tabs[hidden] { display: none !important; }
         #rubCard { margin-top: 18px; margin-bottom: 0; padding-top: 14px; padding-bottom: 14px; }
         #rubCard .msg-head { margin-bottom: 10px; flex-wrap: wrap; }
         .rub-tools { display: flex; gap: 8px; align-items: center; flex: 1 1 220px; min-width: 0; justify-content: flex-end; }
@@ -650,7 +651,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxRepucQEYPRAdDHVD0Uj8MDpGIgwbq2nU5kqFdDqO1jWvo4CXbQFMnHID2p8mlxP0s/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIP2wc0efDSUigLAuKvWx3HRDQwHsvFaWlXNLPGLLyio-oJHsnxdQTMEH6iUFwsikO/exec";
 
         // Chiamata verso Google Script: prima via JSONP (tag script), se non va via fetch (piano B)
         function jsonpOnce(params, timeoutMs) {
@@ -812,7 +813,8 @@
             $('userName').textContent = session.name;
             $('loginPin').value = '';
             document.body.classList.add('logged');
-            showTab('new');
+            let saved = null; try { saved = JSON.parse(lsGet('hr_tabs_' + session.name) || 'null'); } catch (e) {}
+            activeTab = 'new'; showTab('new'); applyTabs(Array.isArray(saved) ? saved : TAB_IDS);
             loadMine(false);
             loadSchedule(true);
             loadMsgs(false);
@@ -843,6 +845,17 @@
         $('retryLoad').addEventListener('click', async () => { setMsg($('loginMsg'), '', ''); await loadEmployees(); });
 
         /* ---------- Schede ---------- */
+        // pulsanti abilitati dall'amministratore per questo dipendente
+        const TAB_IDS = ['new', 'mine', 'schedule', 'swap', 'util'];
+        let allowedTabs = TAB_IDS.slice();
+        function applyTabs(list) {
+            if (!Array.isArray(list)) return;
+            allowedTabs = TAB_IDS.filter(x => list.indexOf(x) >= 0);
+            if (session) lsSet('hr_tabs_' + session.name, JSON.stringify(allowedTabs));
+            document.querySelectorAll('.tabs .tab').forEach(b => { b.hidden = allowedTabs.indexOf(b.dataset.tab) < 0; });
+            document.querySelector('.tabs').hidden = !allowedTabs.length;
+            if (allowedTabs.indexOf(activeTab) < 0) showTab(allowedTabs[0] || 'none');
+        }
         function showTab(tab) {
             activeTab = tab;
             document.body.classList.toggle('sch-wide', tab === 'schedule');
@@ -1326,6 +1339,7 @@
                 const d = await jsonp({ action: 'my', name: session.name, pin: session.pin }, 20000);
                 if (d && d.ok) {
                     lastLoad = Date.now();
+                    applyTabs(d.tabs);
                     myReqs = (d.requests || []).sort(byIdDesc);
                     renderMine();
                     checkNews();
