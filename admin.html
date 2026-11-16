@@ -1015,12 +1015,22 @@
                     <h2>Registro delle attività <span class="count" id="logCount">0</span></h2>
                     <div class="filters-grid no-print">
                         <div><label for="logUser">Utente</label><select id="logUser"><option value="ALL">Tutti</option></select></div>
+                        <div><label for="logPeriod">Periodo</label><select id="logPeriod"><option value="all">Tutto</option><option value="week">Una settimana</option><option value="month">Un mese</option><option value="year">Un anno</option></select></div>
+                        <div id="logPerValBox" hidden><label for="logPerVal">Quale</label><select id="logPerVal"></select></div>
                         <div><label for="logSearch">Cerca</label><input type="search" id="logSearch" placeholder="Azione, nome, dettaglio..."></div>
-                        <div><button type="button" class="btn btn-small btn-success" id="logXlsx">Scarica Excel</button></div>
+                        <div><label for="logSize">Righe per pagina</label><select id="logSize"><option value="25">25 righe</option><option value="50">50 righe</option><option value="100">100 righe</option></select></div>
+                    </div>
+                    <div class="toolbar no-print">
+                        <label class="selall"><input type="checkbox" id="logSelAll"> Seleziona tutte quelle di questa pagina</label>
+                        <button type="button" class="btn btn-small btn-danger" id="logDelSel" disabled>Elimina selezionate (0)</button>
+                        <button type="button" class="btn btn-small btn-danger" id="logDelAll">Elimina tutte quelle filtrate</button>
+                        <span style="flex:1"></span>
+                        <button type="button" class="btn btn-small btn-success" id="logXlsx">Scarica Excel</button>
                     </div>
                     <div class="table-responsive">
-                        <table><thead><tr><th>Data</th><th>Utente</th><th>Azione</th><th>Dettaglio</th></tr></thead><tbody id="logBody"></tbody></table>
+                        <table><thead><tr><th class="sel-col"></th><th>Data</th><th>Utente</th><th>Azione</th><th>Dettaglio</th><th></th></tr></thead><tbody id="logBody"></tbody></table>
                     </div>
+                    <div id="logPager"></div>
                 </div>
             </section>
 
@@ -1042,7 +1052,7 @@
     <div id="toast" class="toast" hidden></div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKiTxHVyn_KXakfMZelmSw2Rn6goEx-ZsHizgl5-AasSVJexPFMCOL1Uip-aiQHjk_/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxRepucQEYPRAdDHVD0Uj8MDpGIgwbq2nU5kqFdDqO1jWvo4CXbQFMnHID2p8mlxP0s/exec";
 
         // Chiamata verso Google Script: prima via JSONP (tag script), se non va via fetch (piano B)
         function jsonpOnce(params, timeoutMs) {
@@ -2168,9 +2178,22 @@
                 else $('logBody').innerHTML = '<tr><td colspan="4" style="text-align:center;">Registro non disponibile: aggiorna Code.gs e crea la nuova versione.</td></tr>';
             } catch (err) { $('logBody').innerHTML = '<tr><td colspan="4" style="text-align:center;">Impossibile caricare il registro.</td></tr>'; }
         }
+        let logPage = 1, logSel = new Set(), logView = [];
+        function logIso(l) { const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(l.at || ''); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
+        function logWeekOf(iso) { const d = parseISO(iso); return d ? isoOf(addDays(d, -((d.getDay() + 6) % 7))) : ''; }
+        function logPerKey(l, kind) { const iso = logIso(l); return kind === 'year' ? iso.slice(0, 4) : (kind === 'month' ? iso.slice(0, 7) : (kind === 'week' ? logWeekOf(iso) : '')); }
+        function logPerLabel(k, kind) { return kind === 'year' ? k : (kind === 'month' ? MESI[+k.slice(5) - 1] + ' ' + k.slice(0, 4) : 'Settimana dal ' + fmtDate(k) + ' al ' + fmtDate(isoOf(addDays(parseISO(k), 6)))); }
         function logFiltered() {
-            const u = $('logUser').value, q = $('logSearch').value.trim().toLowerCase();
-            return logRows.filter(l => (u === 'ALL' || l.user === u) && (!q || (l.user + ' ' + l.action + ' ' + l.detail + ' ' + l.at).toLowerCase().indexOf(q) >= 0));
+            const u = $('logUser').value, q = $('logSearch').value.trim().toLowerCase(), kind = $('logPeriod').value, pv = $('logPerVal').value;
+            return logRows.filter(l => (u === 'ALL' || l.user === u) && (kind === 'all' || logPerKey(l, kind) === pv) &&
+                (!q || (l.user + ' ' + l.action + ' ' + l.detail + ' ' + l.at).toLowerCase().indexOf(q) >= 0));
+        }
+        function logPeriodOptions() {
+            const kind = $('logPeriod').value, box = $('logPerValBox'), sel = $('logPerVal'), cur = sel.value;
+            box.hidden = kind === 'all'; if (kind === 'all') { sel.innerHTML = ''; return; }
+            const keys = [...new Set(logRows.map(l => logPerKey(l, kind)).filter(Boolean))].sort().reverse();
+            sel.innerHTML = keys.map(k => `<option value="${k}">${esc(logPerLabel(k, kind))}</option>`).join('');
+            if (keys.indexOf(cur) >= 0) sel.value = cur;
         }
         function drawLog() {
             $('accUser').textContent = adminUser;
@@ -2181,14 +2204,59 @@
             const sel = $('logUser'), cur = sel.value, users = [...new Set(logRows.map(l => l.user))].sort();
             sel.innerHTML = '<option value="ALL">Tutti</option>' + users.map(u => `<option>${esc(u)}</option>`).join('');
             sel.value = users.indexOf(cur) >= 0 ? cur : 'ALL';
-            const list = logFiltered();
-            $('logCount').textContent = list.length;
-            $('logBody').innerHTML = list.length ? list.map(l => `<tr><td data-label="Data">${esc(l.at)}</td><td data-label="Utente"><strong>${esc(l.user)}</strong></td><td data-label="Azione">${esc(l.action)}</td><td data-label="Dettaglio">${esc(l.detail) || '-'}</td></tr>`).join('')
-                : '<tr><td colspan="4" style="text-align:center;">Nessuna attività.</td></tr>';
+            logPeriodOptions();
+            const list = logFiltered(), size = +$('logSize').value || 25, pages = Math.max(1, Math.ceil(list.length / size));
+            logPage = Math.min(Math.max(1, logPage), pages);
+            logView = list.slice((logPage - 1) * size, logPage * size);
+            const alive = new Set(logRows.map(l => l.row)); logSel.forEach(r => { if (!alive.has(r)) logSel.delete(r); });
+            $('logCount').textContent = list.length === logRows.length ? list.length : list.length + '/' + logRows.length;
+            $('logBody').innerHTML = logView.length ? logView.map(l => `<tr><td class="sel-col"><input type="checkbox" data-logsel="${l.row}" ${logSel.has(l.row) ? 'checked' : ''} aria-label="Seleziona"></td><td data-label="Data">${esc(l.at)}</td><td data-label="Utente"><strong>${esc(l.user)}</strong></td><td data-label="Azione">${esc(l.action)}</td><td data-label="Dettaglio">${esc(l.detail) || '-'}</td><td><button type="button" class="btn btn-small btn-danger" style="padding:4px 10px" data-logdel="${l.row}">Elimina</button></td></tr>`).join('')
+                : '<tr><td colspan="6" style="text-align:center;">Nessuna attività.</td></tr>';
+            $('logPager').innerHTML = pages > 1 ? '<div class="pager">' + (pages > 12 ? logPagerCompact(pages) : Array.from({ length: pages }, (_, i) => i + 1)).map(n => n === '…' ? '<span style="align-self:center;font-weight:900">…</span>' : `<button type="button" class="pg ${n === logPage ? 'on' : ''}" data-logpg="${n}">${n}</button>`).join('') + '</div>' : '';
+            $('logSelAll').checked = logView.length > 0 && logView.every(l => logSel.has(l.row));
+            $('logDelSel').textContent = 'Elimina selezionate (' + logSel.size + ')'; $('logDelSel').disabled = !logSel.size;
+            $('logDelAll').textContent = 'Elimina tutte quelle filtrate (' + list.length + ')'; $('logDelAll').disabled = !list.length;
         }
+        function logPagerCompact(pages) {      // con tante pagine: prima, ultima e quelle vicine
+            const out = []; for (let n = 1; n <= pages; n++) { if (n === 1 || n === pages || Math.abs(n - logPage) <= 2) out.push(n); else if (out[out.length - 1] !== '…') out.push('…'); } return out;
+        }
+        async function logDelete(items, what) {
+            if (!items.length) return;
+            const sorted = items.slice().sort((x, y) => y.row - x.row);   // dal fondo: le righe sopra non cambiano numero
+            let done = 0; toast('Elimino ' + sorted.length + (sorted.length === 1 ? ' riga…' : ' righe…'), 4000);
+            try {
+                for (let i = 0; i < sorted.length; i += 60) {
+                    const part = sorted.slice(i, i + 60), last = i + 60 >= sorted.length;
+                    const d = await jsonp({ action: 'logdel', rows: part.map(l => l.row + '~' + l.at).join('|'), last: last ? '1' : '0', total: sorted.length, what: what || '', password: adminPassword }, 40000);
+                    if (!d || !d.ok) throw new Error((d && d.error) || 'errore');
+                    done += d.deleted;
+                }
+                toast(done + (done === 1 ? ' riga eliminata.' : ' righe eliminate.'), 5000);
+            } catch (err) { toast('Eliminazione interrotta (' + done + ' righe eliminate): ' + (err && err.message), 8000); }
+            logSel = new Set(); loadLog();
+        }
+        $('logBody').addEventListener('change', e => { const c = e.target.closest('[data-logsel]'); if (!c) return; const r = +c.dataset.logsel; if (c.checked) logSel.add(r); else logSel.delete(r); drawLog(); });
+        $('logBody').addEventListener('click', e => {
+            const b = e.target.closest('[data-logdel]'); if (!b) return;
+            const l = logRows.find(x => x.row === +b.dataset.logdel); if (!l || !confirm('Eliminare questa riga del registro?\n\n' + l.at + ' - ' + l.user + ' - ' + l.action)) return;
+            logDelete([l], '');
+        });
+        $('logSelAll').addEventListener('change', () => { logView.forEach(l => { if ($('logSelAll').checked) logSel.add(l.row); else logSel.delete(l.row); }); drawLog(); });
+        $('logDelSel').addEventListener('click', () => {
+            const items = logRows.filter(l => logSel.has(l.row)); if (!items.length) return;
+            if (confirm('Eliminare le ' + items.length + ' righe selezionate dal registro?\n\nNon si possono recuperare.')) logDelete(items, 'selezionate');
+        });
+        $('logDelAll').addEventListener('click', () => {
+            const items = logFiltered(); if (!items.length) return;
+            const kind = $('logPeriod').value, what = (kind === 'all' ? 'tutto il periodo' : logPerLabel($('logPerVal').value, kind)) + ($('logUser').value !== 'ALL' ? ', utente ' + $('logUser').value : '') + ($('logSearch').value.trim() ? ', ricerca "' + $('logSearch').value.trim() + '"' : '');
+            if (confirm('Eliminare TUTTE le ' + items.length + ' righe che corrispondono ai filtri (' + what + ')?\n\nNon si possono recuperare. Se vuoi tenerne una copia, prima premi "Scarica Excel".')) logDelete(items, what);
+        });
+        $('logPager').addEventListener('click', e => { const b = e.target.closest('[data-logpg]'); if (b) { logPage = +b.dataset.logpg; drawLog(); $('logCount').scrollIntoView({ block: 'start', behavior: 'smooth' }); } });
+        ['logPeriod', 'logPerVal', 'logSize'].forEach(id => $(id).addEventListener('change', () => { logPage = 1; if (id === 'logSize') lsSet('hr_log_size', $('logSize').value); if (id === 'logPeriod') $('logPerVal').value = ''; drawLog(); }));
+        { const sz = lsGet('hr_log_size'); if (['25', '50', '100'].indexOf(sz) >= 0) $('logSize').value = sz; }
         function renderLog() { if (logPass !== adminPassword + adminUser) { logPass = adminPassword + adminUser; } loadLog(); }
-        $('logUser').addEventListener('change', drawLog);
-        $('logSearch').addEventListener('input', drawLog);
+        $('logUser').addEventListener('change', () => { logPage = 1; drawLog(); });
+        $('logSearch').addEventListener('input', () => { logPage = 1; drawLog(); });
         $('logXlsx').addEventListener('click', () => {
             const list = logFiltered(); if (!list.length) { toast('Niente da esportare.'); return; }
             saveBlobAdmin(buildXlsxMulti([{ name: 'Registro', header: ['Data', 'Utente', 'Azione', 'Dettaglio'], widths: [18, 24, 34, 70], rows: list.map(l => [l.at, l.user, l.action, l.detail]) }]), 'registro_attivita_' + isoOf(new Date()) + '.xlsx');
