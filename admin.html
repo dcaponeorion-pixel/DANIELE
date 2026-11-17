@@ -496,6 +496,9 @@
         #schTable .sch-cov td { font-weight: 900; color: #fff; padding: 6px; }
         #schTable .sch-cov td.ok { background: #009600; }
         #schTable .sch-cov td.ko { background: #d00000; }
+        #schTable .sch-cov td.na { background: #9aa3ad; }
+        .sch-dirty.saved { color: #009600; }
+        [data-sch="undo"]:disabled, [data-sch="redo"]:disabled { opacity: .45; cursor: default; }
         #schTable .sch-cov td.sch-name { background: #e8e8e8; color: #111; }
         #schTable thead th { border-right: 1px solid #000; }
         #schTable .dsep { border-left: 3px solid #000; }
@@ -882,7 +885,9 @@
                         </div>
                         <div class="sch-grp">
                             <span class="sch-grp-t">Modifica</span>
-                            <button type="button" class="btn btn-small btn-success" data-sch="save">Salva</button>
+                            <button type="button" class="btn btn-small btn-success" data-sch="save" title="Salva subito le modifiche di questa settimana">Salva</button>
+                            <button type="button" class="btn btn-small btn-tool" data-sch="undo" id="schUndo" title="Annulla l'ultima modifica (Ctrl+Z)" disabled>↶ Annulla</button>
+                            <button type="button" class="btn btn-small btn-tool" data-sch="redo" id="schRedo" title="Ripeti la modifica annullata (Ctrl+Y)" disabled>↷ Ripeti</button>
                             <button type="button" class="btn btn-small btn-tool" data-sch="copy">Copia / Ripeti</button>
                             <button type="button" class="btn btn-small btn-tool" data-sch="tpl">Modelli</button>
                             <button type="button" class="btn btn-small btn-tool" data-sch="verify">Verifica permessi</button>
@@ -2629,6 +2634,29 @@
         const REST = '00:00/00:00';
         const SCH_FONT = "'Gotham Rounded Bold','Segoe UI',Arial,sans-serif";
         let schCfg = null, schWeeks = [], schStart = '', schData = null, schDirty = false;
+        let schUndo = [], schRedo = [], schPrev = null, schSaving = false;
+        // la domenica e i festivi nazionali il controllo delle persone non serve
+        function schNoCheck(d) { return schDate(d).getDay() === 0 || isHoliday(schIso(d)); }
+        function schDraftKey(w) { return 'sch_draft_' + w; }
+        function schDraftSave() { try { if (schDirty && schStart && schData) localStorage.setItem(schDraftKey(schStart), JSON.stringify(schData)); } catch (e) {} }
+        function schDraftDrop(w) { try { localStorage.removeItem(schDraftKey(w)); } catch (e) {} }
+        function schDraftGet(w) { try { return localStorage.getItem(schDraftKey(w)); } catch (e) { return null; } }
+        function schUndoBtns() { const u = $('schUndo'), r = $('schRedo'); if (u) u.disabled = !schUndo.length; if (r) r.disabled = !schRedo.length; }
+        // registra la modifica appena fatta (chiamata a ogni ridisegno)
+        function schTrack() {
+            const cur = JSON.stringify(schData);
+            if (schPrev !== null && cur !== schPrev) { schUndo.push(schPrev); if (schUndo.length > 200) schUndo.shift(); schRedo = []; }
+            schPrev = cur; schDraftSave(); schUndoBtns();
+        }
+        function schUndoDo(back) {
+            const from = back ? schUndo : schRedo, to = back ? schRedo : schUndo;
+            if (!from.length) { toast(back ? 'Niente da annullare.' : 'Niente da ripetere.'); return; }
+            to.push(JSON.stringify(schData));
+            schData = JSON.parse(from.pop()); schEnsure();
+            schPrev = JSON.stringify(schData); schDirty = true; schDraftSave();
+            drawSchedule();
+            toast(back ? 'Ultima modifica annullata.' : 'Modifica ripristinata.', 1800);
+        }
         let schPub = { published: false, at: '', tok: '' }, schPass = '', schFlag = false, schLoading = false;
 
         function schDefaultCfg() {
@@ -2819,28 +2847,50 @@
             try { schData = d.data ? JSON.parse(d.data) : null; } catch (e) { schData = null; }
             schPub = { published: !!d.published, at: d.at || '', tok: d.tok || '' };
             schEnsure(); schDirty = false; schFlag = false;
+            const draft = schDraftGet(start);
+            if (draft) {
+                if (draft !== JSON.stringify(schData)) {
+                    try { schData = JSON.parse(draft); schEnsure(); schDirty = true; toast('Ho ripristinato le modifiche non salvate di questa settimana. Premi Salva per confermarle.', 7000); }
+                    catch (e) { schDraftDrop(start); }
+                } else schDraftDrop(start);
+            }
+            schUndo = []; schRedo = []; schPrev = JSON.stringify(schData);
             drawSchedule();
         }
         async function schSave(silent) {
             schEnsure();
-            const json = JSON.stringify(schData);
-            const ok = await schPostVerified({ op: 'schedsave', week: schStart, data: json }, async () => {
-                const d = await jsonp({ action: 'schedget', week: schStart, password: adminPassword }, 15000);
-                return d && d.ok && d.data === json;
+            const json = JSON.stringify(schData), week = schStart;
+            const same = v => { try { return v === json || JSON.stringify(JSON.parse(v)) === json; } catch (e) { return false; } };
+            schSaving = true;
+            const dz = $('schDirty'); dz.hidden = false; dz.classList.remove('saved'); dz.textContent = '● salvataggio in corso…';
+            const ok = await schPostVerified({ op: 'schedsave', week: week, data: json }, async () => {
+                const d = await jsonp({ action: 'schedget', week: week, password: adminPassword }, 15000);
+                return d && d.ok && same(d.data);
             });
+            schSaving = false;
             if (ok) {
-                schDirty = false;
-                if (!schWeeks.some(w => w.week === schStart)) schWeeks.push({ week: schStart, published: false });
-                $('schDirty').hidden = true;
+                // se nel frattempo hai fatto altre modifiche restano da salvare
+                if (week === schStart && JSON.stringify(schData) === json) { schDirty = false; schDraftDrop(week); }
+                if (!schWeeks.some(w => w.week === week)) schWeeks.push({ week: week, published: false });
                 if (!silent) toast('Orario salvato.');
-            } else toast('Salvataggio non confermato: riprova.', 6000);
+                if (!schDirty) { dz.textContent = '✓ salvato'; dz.classList.add('saved'); dz.hidden = false; setTimeout(() => { if (!schDirty && !schSaving) dz.hidden = true; }, 3000); }
+                else { dz.classList.remove('saved'); dz.textContent = '● modifiche non salvate'; }
+            } else {
+                dz.classList.remove('saved'); dz.textContent = '● modifiche non salvate'; dz.hidden = false;
+                toast('Salvataggio non confermato: le modifiche restano su questo computer, riprova con Salva.', 7000);
+            }
             return ok;
         }
         async function schGoto(start) {
             if (schLoading || !/^\d{4}-\d{2}-\d{2}$/.test(start)) return;
             schLoading = true;
             try {
-                if (schDirty) await schSave(true);
+                if (schDirty) {
+                    schDraftSave();
+                    const ok = await schSave(true);
+                    if (!ok) { schLoading = false; $('schStart').value = schStart; return; }
+                    toast('Modifiche salvate.', 1800);
+                }
                 await schLoadWeek(start);
             } catch (err) { toast('Impossibile cambiare settimana.'); }
             schLoading = false;
@@ -2865,7 +2915,8 @@
             stt.className = 'sch-state' + (schPub.published ? ' on' : '');
             stt.title = schPub.published ? 'Pubblicato il ' + schPub.at : '';
             $('schUnpub').hidden = !schPub.published;
-            $('schDirty').hidden = !schDirty;
+            schTrack();
+            if (!schSaving) { const dz = $('schDirty'); if (schDirty) { dz.hidden = false; dz.classList.remove('saved'); dz.textContent = '● modifiche non salvate'; } else if (!dz.classList.contains('saved')) dz.hidden = true; }
             const permLabels = new Set(schWeekPermits(false).map(p => p.label));
 
             let h = '<thead><tr><th class="sch-corner">ORARI NEGOZIO</th>';
@@ -2906,6 +2957,7 @@
             h += '<tr class="sch-cov"><td class="sch-name">CONTROLLO (≥' + schCfg.minPeople + ' alle ' + esc(schCfg.afterStart) + ')</td>';
             const lacking = [];
             for (let d = 0; d < 7; d++) {
+                if (schNoCheck(d)) { h += '<td colspan="3" class="dsep na">' + (isHoliday(schIso(d)) ? 'FESTIVO' : 'DOMENICA') + ' – NON SERVE</td>'; continue; }
                 const n = schCover(d), ok = n >= schCfg.minPeople;
                 if (!ok) lacking.push(schDayName(d) + ' ' + schDmy(schDate(d)) + ' (' + n + '/' + schCfg.minPeople + ')');
                 h += '<td colspan="3" class="dsep ' + (ok ? 'ok' : 'ko') + '">' + (ok ? 'OK' : 'MANCANO PERSONE') + ' (' + n + ')</td>';
@@ -2942,6 +2994,16 @@
             schData.rows[t.dataset.l][+t.dataset.d][+t.dataset.s] = t.value;
             schDirty = true; drawSchedule();
         });
+        document.addEventListener('keydown', e => {
+            if (!(e.ctrlKey || e.metaKey) || e.altKey || !schCfg || !schData) return;
+            const tab = $('tab-schedule'); if (!tab || tab.offsetParent === null || !$('modal').hidden) return;
+            const t = e.target; if (t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'checkbox'))) return;
+            const k = e.key.toLowerCase();
+            if (k === 'z' && !e.shiftKey) { e.preventDefault(); if (!schLoading) schUndoDo(true); }
+            else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); if (!schLoading) schUndoDo(false); }
+            else if (k === 's') { e.preventDefault(); const b = document.querySelector('[data-sch="save"]'); if (b && !b.disabled && !schLoading) b.click(); }
+        });
+        window.addEventListener('beforeunload', e => { if (schDirty) { schDraftSave(); e.preventDefault(); e.returnValue = ''; } });
         $('tab-schedule').addEventListener('click', e => {
             const b = e.target.closest('[data-sch]');
             if (!b || !schCfg) return;
@@ -2953,6 +3015,8 @@
             if (a === 'prev') return schGoto(isoOf(addDays(parseISO(schStart), -7)));
             if (a === 'next') return schGoto(isoOf(addDays(parseISO(schStart), 7)));
             if (a === 'save') { b.disabled = true; await schSave(false); b.disabled = false; return; }
+            if (a === 'undo') return schUndoDo(true);
+            if (a === 'redo') return schUndoDo(false);
             if (a === 'clear') {
                 if (!confirm('Svuotare tutta la settimana (tutti a riposo)?')) return;
                 schData.rows = {}; schData.permits = []; schEnsure(); schDirty = true; drawSchedule(); return;
@@ -3346,7 +3410,9 @@
             if (opt.coverage) {
                 box(M, y, nameW, covH, '#e8e8e8'); txt('CONTROLLO', M, y, nameW, covH, { size: 14, align: 'left' });
                 for (let d = 0; d < 7; d++) {
-                    const ok = schCover(d) >= schCfg.minPeople, dx = M + nameW + d * dayW;
+                    const dx = M + nameW + d * dayW;
+                    if (schNoCheck(d)) { box(dx, y, dayW, covH, '#9aa3ad'); txt(isHoliday(schIso(d)) ? 'FESTIVO' : 'DOMENICA', dx, y, dayW, covH, { size: 14, color: '#fff' }); continue; }
+                    const ok = schCover(d) >= schCfg.minPeople;
                     box(dx, y, dayW, covH, ok ? '#009600' : '#d00000'); txt(ok ? 'OK' : 'MANCANO PERSONE', dx, y, dayW, covH, { size: 14, color: '#fff' });
                 }
                 y += covH;
@@ -3449,7 +3515,7 @@
                     return d && d.ok && d.published && d.tok === tok;
                 });
                 if (ok) {
-                    schDirty = false; schPub = { published: true, at: new Date().toLocaleString('it-IT'), tok };
+                    schDirty = false; schDraftDrop(schStart); schPub = { published: true, at: new Date().toLocaleString('it-IT'), tok };
                     const w = schWeeks.find(x => x.week === schStart); if (w) w.published = true; else schWeeks.push({ week: schStart, published: true });
                     drawSchedule(); toast('Orario pubblicato: i dipendenti lo vedono nella loro app.', 7000);
                 } else toast('Pubblicazione non confermata: controlla la connessione e riprova.', 8000);
