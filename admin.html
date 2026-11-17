@@ -645,6 +645,7 @@
         .sch-lg-row .lg-v { width: 130px; flex: none; } .sch-lg-row .lg-l { flex: 1; min-width: 0; }
         .sch-lg-row button { flex: none; width: 34px; padding: 6px 0; }
         #modal.wide .modal-box { max-width: 960px; }
+        #modal:has(#modalAlt) .modal-box { max-width: 560px; }
         #modal.wide #modalBody img.sch-prev { width: 100%; height: auto; border: 1px solid #ccc; border-radius: 6px; }
         .sch-opt { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; font-weight: 800; font-size: 0.9rem; }
         .sch-opt input { width: 20px; height: 20px; margin: 2px 0 0; flex: none; }
@@ -1400,11 +1401,18 @@
                 setMsg($('modalMsg'), '', '');
                 ok.textContent = opt.okText || 'Conferma';
                 ok.className = 'btn ' + (opt.okClass || '');
+                cancel.textContent = opt.cancelText || 'Annulla';
+                let alt = null;
+                if (opt.altText) {
+                    alt = document.createElement('button'); alt.type = 'button'; alt.id = 'modalAlt';
+                    alt.className = 'btn ' + (opt.altClass || 'btn-danger'); alt.textContent = opt.altText;
+                    ok.parentNode.insertBefore(alt, ok); alt.onclick = () => close('alt');
+                }
                 modal.hidden = false;
                 const first = modal.querySelector('#modalBody input, #modalBody textarea, #modalBody select');
                 if (first) setTimeout(() => first.focus(), 50);
                 function close(val) {
-                    modal.hidden = true; ok.onclick = null; cancel.onclick = null; modal.onclick = null;
+                    modal.hidden = true; ok.onclick = null; cancel.onclick = null; modal.onclick = null; if (alt) alt.remove();
                     document.removeEventListener('keydown', onKey); resolve(val);
                 }
                 function onKey(e) { if (e.key === 'Escape') close(null); }
@@ -2883,10 +2891,23 @@
         }
         async function schGoto(start) {
             if (schLoading || !/^\d{4}-\d{2}-\d{2}$/.test(start)) return;
+            if (start === schStart && !schDirty) return;
+            let choice = null;
+            if (schDirty) {
+                schDraftSave();
+                schLoading = true;
+                choice = await showModal({
+                    title: 'Modifiche non salvate',
+                    body: '<p>Stai cambiando settimana senza salvare le modifiche fatte all\'orario dal <b>' + schDmy(schDate(0)) + '</b> al <b>' + schDmy(schDate(6)) + '</b>.</p><p>Vuoi salvarle?</p>',
+                    okText: 'Sì, salva', okClass: 'btn-success', altText: 'No, non salvare', cancelText: 'Resta qui'
+                });
+                schLoading = false;
+                if (choice === null) { $('schStart').value = schStart; return; }
+            }
             schLoading = true;
             try {
-                if (schDirty) {
-                    schDraftSave();
+                if (choice === 'alt') { schDraftDrop(schStart); schDirty = false; toast('Modifiche non salvate scartate.', 2500); }
+                else if (choice) {
                     const ok = await schSave(true);
                     if (!ok) { schLoading = false; $('schStart').value = schStart; return; }
                     toast('Modifiche salvate.', 1800);
