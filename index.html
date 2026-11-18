@@ -235,6 +235,14 @@
         .remember input { width: 20px; height: 20px; accent-color: #0047bb; flex: none; }
         @media print { .toast, .modal, .tabs { display: none !important; } }
         /* ===== Portale dipendenti ===== */
+        .userbar-act { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .userbar-act .btn { width: auto; }
+        @media (max-width: 600px) {
+            .userbar { flex-wrap: wrap; }
+            .userbar > div:first-child { width: 100%; }
+            .userbar-act { width: 100%; flex-wrap: nowrap; }
+            .userbar-act .btn { flex: 1 1 auto; padding-left: 8px; padding-right: 8px; white-space: nowrap; }
+        }
         .userbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #fff; border-radius: 12px; padding: 10px 14px;
                    margin-bottom: 14px; border: 2px solid #000; font-weight: 800; box-shadow: 0 3px 8px rgba(0,0,0,0.25); }
         .hint { margin-top: 14px; color: #555; font-size: 0.85rem; font-weight: 700; text-align: center; }
@@ -430,7 +438,11 @@
         <div id="appView" style="display:none;">
             <div class="userbar">
                 <div>Ciao, <b id="userName"></b></div>
-                <button type="button" class="btn btn-small btn-del" id="logoutBtn">Esci</button>
+                <div class="userbar-act">
+                    <button type="button" class="btn btn-small btn-del" id="hrnInstall" hidden>📲 Installa</button>
+                    <button type="button" class="btn btn-small hrn-bell" id="hrnBell">🔔 Attiva avvisi</button>
+                    <button type="button" class="btn btn-small btn-del" id="logoutBtn">Esci</button>
+                </div>
             </div>
 
             <div class="banner" id="updatesBanner" hidden>
@@ -651,7 +663,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIP2wc0efDSUigLAuKvWx3HRDQwHsvFaWlXNLPGLLyio-oJHsnxdQTMEH6iUFwsikO/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyxjv2PqLfwmVe9tI8sYnv14BdSKuR3ShQa4t3S8_8bpyW1YEz3ZPqaCKhJKNiBcqEE/exec";
 
         // Chiamata verso Google Script: prima via JSONP (tag script), se non va via fetch (piano B)
         function jsonpOnce(params, timeoutMs) {
@@ -822,9 +834,11 @@
             loadContacts(false);
             loadSwaps(false);
             loadMyShift();
+            if (window.HRN) HRN.start();
         }
 
         function logout(message) {
+            if (window.HRN) HRN.leave();
             session = null; myReqs = []; schWeeks = []; schCurrent = ''; schDataUrl = ''; msgs = []; procs = []; renderProcs(); contacts = []; renderContacts(); mySwaps = []; myWeeks = []; renderMyShift(); $('swapBadge').hidden = true;
             document.body.classList.remove('logged'); $('msgBanner').hidden = true; renderMsgs();
             lsSet('hr_cred', null); ssSet('hr_cred_s', null);
@@ -1549,6 +1563,274 @@
     </script>
 
 
+    <style>
+        .hrn-bell.on { background: #1e8e3e !important; }
+        .hrn-ov { position: fixed; inset: 0; background: rgba(0, 20, 50, .55); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .hrn-box { background: #fff; color: #1d2733; border-radius: 14px; border-top: 5px solid #ff6600; padding: 20px 22px; width: 100%; max-width: 460px; max-height: 90vh; overflow: auto; box-shadow: 0 12px 40px rgba(0,0,0,.35); }
+        .hrn-box h3 { margin: 0 0 10px; color: #002b66; font-size: 1.15rem; }
+        .hrn-body { font-size: .95rem; line-height: 1.45; }
+        .hrn-body p { margin: 0 0 10px; }
+        .hrn-small { font-size: .85rem; color: #5b6573; }
+        .hrn-steps { margin: 6px 0 12px; padding-left: 22px; }
+        .hrn-steps li { margin: 6px 0; }
+        .hrn-ico { display: inline-flex; vertical-align: -4px; color: #0a63d1; }
+        .hrn-act { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+        .hrn-btn { border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 800; font-family: inherit; font-size: .95rem; cursor: pointer; color: #fff; background: #ff6600; }
+        .hrn-btn.hrn-b2 { background: #0047bb; } .hrn-btn.hrn-b3 { background: #6c757d; }
+    </style>
+    <script>
+    /* =====================  Avvisi con suono + notifiche + installazione  ===================== */
+    window.HRN = (function () {
+        const C = { app: 'emp', url: '', auth: () => null, list: 'avvisi', sub: 'pushsub', unsub: 'pushunsub', jsonp: null, toast: null, onNew: null, btn: null, inst: null, key: 'emp' };
+        let timer = null, busy = false, pushOn = false, regPromise = null;
+        const LS = {
+            get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+            set(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+        };
+        const ua = navigator.userAgent || '';
+        const isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isMacSafari = !isIOS && /Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Chromium|Edg|Firefox|OPR/.test(ua);
+        const isAndroid = /android/i.test(ua);
+        function standalone() { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
+        function pushSupported() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+
+        /* ---------- suono ---------- */
+        let ctx = null;
+        function audio() {
+            if (!ctx) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; try { ctx = new A(); } catch (e) { return null; } }
+            return ctx;
+        }
+        function unlock() {
+            const a = audio(); if (!a) return;
+            if (a.state !== 'running') a.resume().catch(() => {});
+            try { const b = a.createBuffer(1, 1, 22050), s = a.createBufferSource(); s.buffer = b; s.connect(a.destination); s.start(0); } catch (e) {}
+        }
+        ['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, unlock, { passive: true }));
+        function chime() {
+            const a = audio();
+            if (a) {
+                if (a.state !== 'running') a.resume().catch(() => {});
+                const t0 = a.currentTime + 0.02;
+                [[880, 0], [1318.5, 0.16], [1760, 0.32]].forEach(([f, dt]) => {
+                    const o = a.createOscillator(), g = a.createGain();
+                    o.type = 'sine'; o.frequency.value = f;
+                    g.gain.setValueAtTime(0.0001, t0 + dt);
+                    g.gain.exponentialRampToValueAtTime(0.35, t0 + dt + 0.02);
+                    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.45);
+                    o.connect(g); g.connect(a.destination); o.start(t0 + dt); o.stop(t0 + dt + 0.5);
+                });
+            }
+            try { if (navigator.vibrate) navigator.vibrate([180, 80, 180]); } catch (e) {}
+        }
+
+        /* ---------- controllo degli avvisi ---------- */
+        function sinceKey() { const a = C.auth(); return a ? 'hr_avv_' + C.key + '_' + (a.name || a.user || '') : ''; }
+        async function poll() {
+            const a = C.auth(); if (!a || busy || !C.jsonp) return;
+            busy = true;
+            try {
+                const k = sinceKey(), since = LS.get(k);
+                const d = await C.jsonp(Object.assign({ action: C.list, since: since || '' }, a), 20000);
+                if (d && d.ok) {
+                    if (d.last) LS.set(k, d.last);
+                    const items = d.items || [];
+                    if (since && items.length) announce(items);
+                }
+            } catch (e) {}
+            busy = false;
+        }
+        function announce(items) {
+            chime();
+            const last = items[items.length - 1];
+            if (C.toast) C.toast(items.length === 1 ? '🔔 ' + last.title + (last.text ? ': ' + last.text : '') : '🔔 ' + items.length + ' nuovi avvisi — ultimo: ' + last.title, 8000);
+            // finestra in secondo piano senza notifiche push: avviso del sistema
+            if (document.hidden && !pushOn && 'Notification' in window && Notification.permission === 'granted') {
+                reg().then(r => r && r.showNotification(last.title, { body: last.text || '', icon: 'icon-192.png', tag: 'hr-local-' + last.id })).catch(() => {});
+            }
+            try { if (C.onNew) C.onNew(items); } catch (e) {}
+        }
+        function schedule() {
+            clearTimeout(timer);
+            if (!C.auth()) return;
+            timer = setTimeout(async () => { await poll(); schedule(); }, document.hidden ? 60000 : 30000);
+        }
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && C.auth()) { poll(); schedule(); } });
+        if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'hr-push') poll(); });
+
+        /* ---------- notifiche push (anche ad app chiusa) ---------- */
+        function reg() {
+            if (!('serviceWorker' in navigator)) return Promise.resolve(null);
+            if (!regPromise) regPromise = navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).catch(() => null);
+            return regPromise;
+        }
+        function keyBytes(b64) {
+            const s = b64.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((b64.length + 3) % 4);
+            const raw = atob(s), out = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+            return out;
+        }
+        function device() { return isIOS ? 'iPhone/iPad' : isAndroid ? 'Android' : isMacSafari ? 'Mac' : (/Windows/.test(ua) ? 'Windows' : 'Computer'); }
+        async function saveCfg() {
+            try { const c = await caches.open('hr-orion-cfg'); await c.put('./__cfg', new Response(JSON.stringify({ url: C.url }), { headers: { 'Content-Type': 'application/json' } })); } catch (e) {}
+        }
+        async function subscribe(ask) {
+            if (!pushSupported()) return { ok: false, why: 'nosupport' };
+            let perm = Notification.permission;
+            if (perm === 'default' && ask) perm = await Notification.requestPermission();
+            if (perm !== 'granted') return { ok: false, why: perm === 'denied' ? 'denied' : 'default' };
+            const r = await reg(); if (!r) return { ok: false, why: 'nosw' };
+            await saveCfg();
+            let sub = await r.pushManager.getSubscription();
+            if (!sub) {
+                const k = await C.jsonp({ action: 'pushkey' }, 20000);
+                if (!k || !k.ok) return { ok: false, why: 'server' };
+                sub = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(k.key) });
+            }
+            const a = C.auth(); if (!a) return { ok: false, why: 'login' };
+            const d = await C.jsonp(Object.assign({ action: C.sub, ep: sub.endpoint, dev: device() }, a), 20000);
+            if (!d || !d.ok) return { ok: false, why: 'server' };
+            return { ok: true };
+        }
+        async function unsubscribe() {
+            const r = await reg(); const sub = r && await r.pushManager.getSubscription();
+            const a = C.auth();
+            if (sub && a) { try { await C.jsonp(Object.assign({ action: C.unsub, ep: sub.endpoint }, a), 20000); } catch (e) {} }
+            LS.set('hr_push_off_' + C.key, '1');
+            pushOn = false; paint();
+        }
+
+        /* ---------- campanella ---------- */
+        function paint() {
+            if (!C.btn) return;
+            C.btn.textContent = pushOn ? '🔔 Avvisi attivi' : '🔔 Attiva avvisi';
+            C.btn.classList.toggle('on', pushOn);
+            if (C.inst) C.inst.hidden = standalone();
+        }
+        async function bellClick() {
+            unlock(); chime();
+            if (pushOn) {
+                const r = await modal('Avvisi attivi', '<p>Su questo dispositivo ricevi una <b>notifica con suono</b> per ogni novità, anche ad app chiusa. Con l\'app aperta senti anche il "din-don".</p>' +
+                    '<p class="hrn-small">Se non senti nulla controlla il volume e che le notifiche di questa app non siano disattivate nelle impostazioni del telefono.</p>',
+                    [['test', 'Prova il suono', 'hrn-b2'], ['off', 'Disattiva', 'hrn-b3'], ['', 'Chiudi', 'hrn-b1']]);
+                if (r === 'test') { chime(); bellClick(); }
+                if (r === 'off') { await unsubscribe(); if (C.toast) C.toast('Avvisi disattivati su questo dispositivo. Con l\'app aperta il suono resta attivo.', 6000); }
+                return;
+            }
+            if (isIOS && !standalone()) {
+                await modal('Prima installa l\'app', '<p>Su iPhone e iPad le notifiche arrivano solo all\'app <b>aggiunta alla schermata Home</b> (iOS 16.4 o più recente).</p>' + iosSteps() +
+                    '<p>Dall\'app installata premi di nuovo <b>🔔 Attiva avvisi</b> e scegli <b>Consenti</b>.</p><p class="hrn-small">Intanto, con l\'app aperta, il suono degli avvisi funziona già.</p>', [['', 'Ho capito', 'hrn-b1']]);
+                return;
+            }
+            if (!pushSupported()) {
+                await modal('Avvisi', '<p>Questo browser non riceve notifiche ad app chiusa. Con l\'app <b>aperta</b> senti comunque il suono a ogni novità.</p><p class="hrn-small">Per le notifiche usa Chrome, Edge, Firefox o Safari aggiornati.</p>', [['', 'OK', 'hrn-b1']]);
+                return;
+            }
+            if (Notification.permission === 'denied') {
+                await modal('Notifiche bloccate', '<p>Hai bloccato le notifiche per questo sito. Per riattivarle:</p><ul>' +
+                    (isIOS ? '<li>apri <b>Impostazioni → Notifiche</b>, cerca l\'app <b>HR Orion</b> e attiva <b>Consenti notifiche</b> e <b>Suoni</b>.</li>'
+                        : '<li>tocca il <b>lucchetto</b> accanto all\'indirizzo del sito → <b>Notifiche</b> → <b>Consenti</b>;</li><li>poi ricarica la pagina e premi di nuovo 🔔.</li>') + '</ul>', [['', 'OK', 'hrn-b1']]);
+                return;
+            }
+            C.btn.disabled = true; C.btn.textContent = '🔔 Attivo…';
+            let r = { ok: false, why: 'err' };
+            try { r = await subscribe(true); } catch (e) { r = { ok: false, why: 'err' }; }
+            C.btn.disabled = false;
+            if (r.ok) { LS.set('hr_push_off_' + C.key, null); pushOn = true; paint(); if (C.toast) C.toast('Avvisi attivi: riceverai una notifica con suono a ogni novità.', 6000); return; }
+            paint();
+            const why = { server: 'Il server non ha ancora le notifiche attive: l\'amministratore deve eseguire "attivaNotifiche" nello script Google (una volta sola).',
+                default: 'Non hai dato il permesso. Premi di nuovo 🔔 e scegli "Consenti".', denied: 'Notifiche bloccate nelle impostazioni del browser.' }[r.why] || 'Non è stato possibile attivare le notifiche su questo dispositivo. Con l\'app aperta il suono funziona comunque.';
+            if (C.toast) C.toast(why, 9000);
+        }
+
+        /* ---------- finestrella ---------- */
+        function modal(title, body, buttons) {
+            return new Promise(res => {
+                const ov = document.createElement('div'); ov.className = 'hrn-ov';
+                ov.innerHTML = '<div class="hrn-box" role="dialog" aria-modal="true"><h3></h3><div class="hrn-body">' + body + '</div><div class="hrn-act"></div></div>';
+                ov.querySelector('h3').textContent = title;
+                const act = ov.querySelector('.hrn-act');
+                const close = v => { ov.remove(); document.removeEventListener('keydown', onK); res(v); };
+                const onK = e => { if (e.key === 'Escape') close(''); };
+                buttons.forEach(([v, t, cl]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'hrn-btn ' + (cl || ''); b.textContent = t; b.onclick = () => close(v); act.appendChild(b); });
+                ov.addEventListener('click', e => { if (e.target === ov) close(''); });
+                document.addEventListener('keydown', onK);
+                document.body.appendChild(ov);
+            });
+        }
+
+        /* ---------- installazione ---------- */
+        const SHARE = '<span class="hrn-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>';
+        const PLUS = '<span class="hrn-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>';
+        function iosSteps() {
+            const chrome = /CriOS|EdgiOS|FxiOS/.test(ua);
+            return '<ol class="hrn-steps">' +
+                (chrome
+                    ? '<li>Tocca ' + SHARE + ' <b>Condividi</b> (in alto a destra, nella barra dell\'indirizzo).</li>'
+                    : '<li>In Safari tocca ' + SHARE + ' <b>Condividi</b> (in basso, oppure dentro il pulsante <b>•••</b> accanto all\'indirizzo).</li>') +
+                '<li>Scorri e tocca ' + PLUS + ' <b>Aggiungi alla schermata Home</b>.</li>' +
+                '<li>Se vedi l\'opzione <b>Apri come app web</b> lasciala attiva, poi tocca <b>Aggiungi</b>.</li>' +
+                '<li>Apri <b>' + (C.key === 'admin' ? 'HR Orion Admin' : 'HR Orion') + '</b> dall\'icona sulla Home.</li></ol>';
+        }
+        let deferred = null;
+        window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; if (C.inst) C.inst.hidden = false; });
+        window.addEventListener('appinstalled', () => { deferred = null; if (C.inst) C.inst.hidden = true; });
+        function canInstall() { return !standalone(); }
+        async function install() {
+            if (deferred) { deferred.prompt(); try { await deferred.userChoice; } catch (e) {} deferred = null; return; }
+            let body;
+            if (isIOS) body = '<p>Per avere l\'app sull\'iPhone o sull\'iPad:</p>' + iosSteps() + '<p class="hrn-small">Le notifiche arrivano solo aprendo l\'app dall\'icona (iOS 16.4 o più recente).</p>';
+            else if (isMacSafari) body = '<p>Sul Mac con Safari (macOS Sonoma o più recente):</p><ol class="hrn-steps"><li>Apri il menu <b>Archivio</b> (File) in alto.</li><li>Scegli <b>Aggiungi al Dock…</b> e conferma con <b>Aggiungi</b>.</li><li>Apri l\'app dal Dock.</li></ol><p class="hrn-small">In alternativa: pulsante ' + SHARE + ' Condividi → <b>Aggiungi al Dock</b>.</p>';
+            else if (isAndroid) body = '<p>Su Android:</p><ol class="hrn-steps"><li>Apri il menu <b>⋮</b> del browser (in alto a destra).</li><li>Tocca <b>Installa app</b> oppure <b>Aggiungi a schermata Home</b>.</li><li>Conferma e apri l\'app dall\'icona.</li></ol>';
+            else body = '<p>Sul computer con Chrome o Edge:</p><ol class="hrn-steps"><li>Clicca l\'icona <b>Installa</b> ' + PLUS + ' a destra nella barra dell\'indirizzo, oppure il menu <b>⋮</b> → <b>Trasmetti, salva e condividi</b> → <b>Installa pagina come app</b>.</li><li>Conferma con <b>Installa</b>.</li></ol><p class="hrn-small">Firefox su computer non installa le app: usa Chrome o Edge.</p>';
+            await modal('Installa l\'app', body, [['', 'Ho capito', 'hrn-b1']]);
+        }
+
+        /* ---------- avvio ---------- */
+        function init(opt) {
+            Object.assign(C, opt);
+            if (C.btn) C.btn.addEventListener('click', bellClick);
+            if (C.inst) { C.inst.addEventListener('click', install); C.inst.hidden = !canInstall(); }
+            reg().then(() => saveCfg());
+            paint();
+        }
+        // chiamare dopo l'accesso
+        async function start() {
+            await poll(); schedule();
+            pushOn = false;
+            if (pushSupported() && Notification.permission === 'granted' && !LS.get('hr_push_off_' + C.key)) {
+                try { const r = await subscribe(false); pushOn = !!r.ok; } catch (e) {}
+            }
+            paint();
+        }
+        // all'uscita: il dispositivo smette di ricevere gli avvisi di questo utente
+        function leave() {
+            const a = C.auth();
+            clearTimeout(timer); timer = null; pushOn = false; paint();
+            if (!a || !pushSupported()) return;
+            reg().then(r => r && r.pushManager.getSubscription()).then(sub => { if (sub) C.jsonp(Object.assign({ action: C.unsub, ep: sub.endpoint }, a), 20000).catch(() => {}); }).catch(() => {});
+        }
+        return { init, start, leave, poll, chime, install, modal, iosSteps, isIOS: () => isIOS, standalone };
+    })();
+    </script>
+    <script>
+        HRN.init({
+            app: 'emp', key: 'emp', url: SCRIPT_URL, jsonp: jsonp, toast: toast,
+            auth: () => session ? { name: session.name, pin: session.pin } : null,
+            list: 'avvisi', sub: 'pushsub', unsub: 'pushunsub',
+            btn: document.getElementById('hrnBell'), inst: document.getElementById('hrnInstall'),
+            onNew: items => {
+                const t = new Set(items.map(x => x.type));
+                if (t.has('msg')) loadMsgs(false);
+                if (t.has('orario')) { loadSchedule(true); loadMyShift(); }
+                if (t.has('esito')) loadMine(true);
+                if (t.has('swap')) { loadSwaps(false); loadMyShift(); }
+                if (t.has('proc')) loadProcs(false);
+                if (t.has('rubrica')) loadContacts(false);
+            }
+        });
+        if (session) HRN.start();
+    </script>
+
     <div id="installBar" class="install-bar" hidden>
         <div class="install-text" id="installText">Installa l'app sul tuo dispositivo per aprirla con un tocco</div>
         <button class="btn" id="installBtn" type="button">Installa</button>
@@ -1602,7 +1884,7 @@
             showBar();
         });
         btn.addEventListener('click', async function () {
-            if (!deferred) return;
+            if (!deferred) { if (window.HRN) HRN.install(); return; }
             deferred.prompt();
             try { await deferred.userChoice; } catch (e) {}
             deferred = null;
@@ -1613,9 +1895,12 @@
         // iPhone / iPad (Safari non ha l'installazione automatica: mostriamo le istruzioni)
         var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        if (ios && !isStandalone()) {
-            txt.innerHTML = 'Per installare l\'app tocca <b>Condividi</b> e poi <b>Aggiungi alla schermata Home</b>';
-            btn.style.display = 'none';
+        var ua = navigator.userAgent || '';
+        var macSafari = !ios && /Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Chromium|Edg|Firefox|OPR/.test(ua);
+        if ((ios || macSafari) && !isStandalone()) {
+            txt.innerHTML = ios ? 'Installa l\'app sull\'iPhone/iPad: tocca <b>Condividi</b> e poi <b>Aggiungi alla schermata Home</b>'
+                                : 'Installa l\'app sul Mac: menu <b>Archivio</b> → <b>Aggiungi al Dock</b>';
+            btn.textContent = 'Come fare';
             showBar();
         }
     })();
