@@ -275,8 +275,18 @@
         .app-grid { display: block; }
         .msg-card { margin-top: 20px; }
         .tabs .tab[hidden], .tabs[hidden] { display: none !important; }
-        #rubCard { margin-top: 18px; margin-bottom: 0; padding-top: 14px; padding-bottom: 14px; }
-        #rubCard .msg-head { margin-bottom: 10px; flex-wrap: wrap; }
+        #rubCard .msg-head, #dotCard .msg-head { margin-bottom: 10px; flex-wrap: wrap; }
+        .util-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+        .util-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 78px; padding: 10px 6px; border: 2px solid var(--border); border-radius: 16px; background: #fff; color: var(--unieuro-blue); font: inherit; font-weight: 900; font-size: .95rem; cursor: pointer; text-align: center; line-height: 1.15; }
+        .util-tile .ut-ico { font-size: 1.5rem; }
+        .util-tile.active { background: var(--unieuro-orange); border-color: var(--unieuro-orange); color: #fff; box-shadow: 0 4px 12px rgba(255,102,0,.3); }
+        .util-sec[data-usec] { display: none; }
+        .util-sec[data-usec].show { display: block; }
+        @media (max-width: 600px) { .util-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } .util-tile { min-height: 64px; font-size: .9rem; } }
+        .dot-qty { max-width: 140px; }
+        .dot-item { border: 2px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; background: #fff; }
+        .dot-item .req-top { font-size: 1rem; }
+        .badge-done { background: #0047bb; }
         .rub-tools { display: flex; gap: 8px; align-items: center; flex: 1 1 220px; min-width: 0; justify-content: flex-end; }
         .rub-tools .btn { flex: none; width: auto; }
         .rub-tools input { flex: 1 1 100px; min-width: 0; width: auto; max-width: 420px; margin: 0; padding: 9px 12px; border: 2px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 0.95rem; }
@@ -544,7 +554,13 @@
             <!-- UTILITY -->
             <div class="card tab-panel" id="panel-util">
                 <h2>Utility</h2>
-                <section class="util-sec">
+                <div class="util-nav" id="utilNav">
+                    <button type="button" class="util-tile" data-util="sconti"><span class="ut-ico">🧮</span>Scontistiche</button>
+                    <button type="button" class="util-tile" data-util="proc"><span class="ut-ico">📄</span>Procedure</button>
+                    <button type="button" class="util-tile" data-util="rub"><span class="ut-ico">📇</span>Rubrica</button>
+                    <button type="button" class="util-tile" data-util="dot"><span class="ut-ico">👕</span>Dotazioni personali</button>
+                </div>
+                <section class="util-sec" data-usec="sconti">
                 <h3 class="util-title">Scontistiche</h3>
                 <div class="util-grid">
                 <div class="util-box">
@@ -581,12 +597,43 @@
                 </div>
                 </div>
                 </section>
-                <section class="util-sec" id="procCard">
+                <section class="util-sec" id="procCard" data-usec="proc">
                     <div class="msg-head">
                         <h3 class="util-title" style="margin:0">Procedure</h3>
                         <button type="button" class="btn btn-small btn-tool" id="refreshProc">Aggiorna</button>
                     </div>
                     <div class="proc-list" id="procList"><div class="chat-empty">Nessuna procedura.</div></div>
+                </section>
+                <section class="util-sec" id="rubCard" data-usec="rub">
+                    <div class="msg-head">
+                        <h3 class="util-title" style="margin:0">Rubrica</h3>
+                        <div class="rub-tools">
+                            <input type="search" id="conSearch" placeholder="Cerca per nome o note (es. tecnico)…" aria-label="Cerca per nome o note">
+                            <button type="button" class="btn btn-small btn-tool" id="conRefresh">Aggiorna</button>
+                        </div>
+                    </div>
+                    <div class="rub-grid" id="conList"><div class="chat-empty">Nessun contatto.</div></div>
+                    <div class="pager" id="conPager"></div>
+                </section>
+                <section class="util-sec" id="dotCard" data-usec="dot">
+                    <div class="msg-head">
+                        <h3 class="util-title" style="margin:0">Dotazioni personali</h3>
+                        <button type="button" class="btn btn-small btn-tool" id="dotRefresh">Aggiorna</button>
+                    </div>
+                    <p class="type-hint" style="margin-bottom:14px">Richiedi divise e materiale di lavoro: l'ufficio riceve subito la richiesta e ti avvisa quando è approvata o pronta.</p>
+                    <form id="dotForm" novalidate>
+                        <div class="form-row">
+                            <div class="form-group"><label for="dotProd">Prodotto</label><select id="dotProd"></select></div>
+                            <div class="form-group" id="dotSizeBox"><label for="dotSize">Taglia</label><select id="dotSize"></select></div>
+                            <div class="form-group dot-qty"><label for="dotQty">Quantità</label><select id="dotQty"></select></div>
+                        </div>
+                        <p class="type-hint" id="dotHint" hidden></p>
+                        <div class="form-group"><label for="dotNote">Note <span class="opt">(facoltative)</span></label><input type="text" id="dotNote" maxlength="250" placeholder="es. la mia è rovinata"></div>
+                        <button type="submit" class="btn" id="dotSend">Invia richiesta</button>
+                        <div id="dotMsg" class="msg" role="status"></div>
+                    </form>
+                    <h3 class="sub-h">Le mie dotazioni</h3>
+                    <div id="dotMine"><div class="empty">Nessuna richiesta.</div></div>
                 </section>
             </div>
 
@@ -634,18 +681,6 @@
 
             </div><!-- /app-grid -->
 
-            <!-- RUBRICA -->
-            <aside class="card msg-card" id="rubCard">
-                <div class="msg-head">
-                    <h2>Rubrica</h2>
-                    <div class="rub-tools">
-                        <input type="search" id="conSearch" placeholder="Cerca per nome o note (es. tecnico)…" aria-label="Cerca per nome o note">
-                        <button type="button" class="btn btn-small btn-tool" id="conRefresh">Aggiorna</button>
-                    </div>
-                </div>
-                <div class="rub-grid" id="conList"><div class="chat-empty">Nessun contatto.</div></div>
-                <div class="pager" id="conPager"></div>
-            </aside>
         </div>
     </div>
 
@@ -663,7 +698,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyxjv2PqLfwmVe9tI8sYnv14BdSKuR3ShQa4t3S8_8bpyW1YEz3ZPqaCKhJKNiBcqEE/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYM9cw0hMVDujHDhm4Y1H7DL_tKsV6Q1Jxpx9rKGRz3Y0M9ARMcLf2Qn__5PPJYmY/exec";
 
         // Chiamata verso Google Script: prima via JSONP (tag script), se non va via fetch (piano B)
         function jsonpOnce(params, timeoutMs) {
@@ -839,7 +874,7 @@
 
         function logout(message) {
             if (window.HRN) HRN.leave();
-            session = null; myReqs = []; schWeeks = []; schCurrent = ''; schDataUrl = ''; msgs = []; procs = []; renderProcs(); contacts = []; renderContacts(); mySwaps = []; myWeeks = []; renderMyShift(); $('swapBadge').hidden = true;
+            session = null; myReqs = []; schWeeks = []; schCurrent = ''; schDataUrl = ''; msgs = []; procs = []; renderProcs(); contacts = []; renderContacts(); dotProds = []; dotMine = []; renderDot(); mySwaps = []; myWeeks = []; renderMyShift(); $('swapBadge').hidden = true;
             document.body.classList.remove('logged'); $('msgBanner').hidden = true; renderMsgs();
             lsSet('hr_cred', null); ssSet('hr_cred_s', null);
             $('appView').style.display = 'none';
@@ -879,7 +914,7 @@
             $('panel-schedule').classList.toggle('active', tab === 'schedule');
             $('panel-swap').classList.toggle('active', tab === 'swap');
             $('panel-util').classList.toggle('active', tab === 'util');
-            if (tab === 'util') loadProcs(false);
+            if (tab === 'util') showUtil(lsGet('hr_util') || 'sconti', true);
             if (tab === 'swap') loadSwaps(false);
             if (tab === 'mine') { markSeen(); }
             if (tab === 'schedule') { if (schCurrent) schMarkSeen(schCurrent); else loadSchedule(false); }
@@ -1204,6 +1239,84 @@
                 try { document.execCommand('copy'); toast('Contatto copiato: incollalo dove vuoi.', 5000); } catch (e2) { toast('Condivisione non disponibile su questo dispositivo.'); }
                 ta.remove();
             }
+        });
+
+        /* ---------- Utility: sottocartelle ---------- */
+        function showUtil(k, load) {
+            if (!document.querySelector('[data-usec="' + k + '"]')) k = 'sconti';
+            lsSet('hr_util', k);
+            document.querySelectorAll('#utilNav .util-tile').forEach(b => b.classList.toggle('active', b.dataset.util === k));
+            document.querySelectorAll('.util-sec[data-usec]').forEach(sec => sec.classList.toggle('show', sec.dataset.usec === k));
+            if (!load) return;
+            if (k === 'proc') loadProcs(false);
+            if (k === 'rub') loadContacts(false);
+            if (k === 'dot') loadDot(false);
+        }
+        $('utilNav').addEventListener('click', e => { const b = e.target.closest('[data-util]'); if (b) showUtil(b.dataset.util, true); });
+
+        /* ---------- Dotazioni personali ---------- */
+        let dotProds = [], dotMine = [];
+        function dotBadge(st) { return st === 'Approvata' ? 'badge-approved' : st === 'Rifiutata' ? 'badge-rejected' : st === 'Consegnata' ? 'badge-done' : 'badge-pending'; }
+        function dotWhen(at) { const m = String(at || '').match(/^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}:\d{2}))?/); return m ? m[3] + '/' + m[2] + '/' + m[1] + (m[4] && m[4] !== '12:00' ? ' ' + m[4] : '') : esc(at); }
+        function fillDotForm() {
+            const sel = $('dotProd'), keep = sel.value;
+            sel.innerHTML = dotProds.length ? '<option value="">— scegli —</option>' + dotProds.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('') : '<option value="">Nessun prodotto disponibile</option>';
+            if (dotProds.some(p => p.id === keep)) sel.value = keep;
+            $('dotSend').disabled = !dotProds.length;
+            fillDotProd();
+        }
+        function fillDotProd() {
+            const p = dotProds.find(x => x.id === $('dotProd').value);
+            const sizes = p ? p.sizes : [];
+            $('dotSizeBox').hidden = !sizes.length;
+            $('dotSize').innerHTML = '<option value="">—</option>' + sizes.map(z => `<option>${esc(z)}</option>`).join('');
+            const max = p ? p.max : 1;
+            $('dotQty').innerHTML = Array.from({ length: max }, (_, i) => `<option>${i + 1}</option>`).join('');
+            $('dotHint').hidden = !(p && p.note); $('dotHint').textContent = p && p.note ? 'ℹ️ ' + p.note : '';
+        }
+        function renderDot() {
+            fillDotForm();
+            $('dotMine').innerHTML = dotMine.length ? dotMine.map(r => `
+                <div class="dot-item" data-id="${esc(r.id)}">
+                    <div class="req-top"><b>${esc(r.qty + '× ' + r.prod)}${r.size ? ' · taglia ' + esc(r.size) : ''}</b><span class="badge ${dotBadge(r.status)}">${esc(r.status)}</span></div>
+                    <div class="req-meta">Richiesta del ${dotWhen(r.at)}</div>
+                    ${r.empNote ? `<div class="req-note">${esc(r.empNote)}</div>` : ''}
+                    ${r.admNote ? `<div class="req-meta">Nota dell'ufficio: <b>${esc(r.admNote)}</b></div>` : ''}
+                    ${r.status === 'In attesa' ? '<div class="req-actions"><button type="button" class="btn btn-danger" data-dotcancel>Annulla richiesta</button></div>' : ''}
+                </div>`).join('') : '<div class="empty">Non hai ancora richiesto dotazioni.</div>';
+        }
+        async function loadDot(manual) {
+            if (!session) return;
+            try {
+                const d = await jsonp({ action: 'dotlist', name: session.name, pin: session.pin }, 20000);
+                if (d && d.ok) { dotProds = d.products || []; dotMine = d.mine || []; renderDot(); }
+                else if (manual) toast((d && d.error) || 'Impossibile caricare le dotazioni.');
+            } catch (err) { if (manual) toast('Impossibile caricare le dotazioni. Riprova.'); }
+        }
+        $('dotProd').addEventListener('change', fillDotProd);
+        $('dotRefresh').addEventListener('click', () => loadDot(true));
+        $('dotForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const p = dotProds.find(x => x.id === $('dotProd').value), msg = $('dotMsg');
+            if (!p) { setMsg(msg, 'err', 'Scegli il prodotto.'); return; }
+            if (p.sizes.length && !$('dotSize').value) { setMsg(msg, 'err', 'Scegli la taglia.'); return; }
+            const btn = $('dotSend'); btn.disabled = true; btn.textContent = 'Invio…'; setMsg(msg, '', '');
+            try {
+                const d = await jsonp({ action: 'dotreq', name: session.name, pin: session.pin, prod: p.id, size: $('dotSize').value, qty: $('dotQty').value, note: $('dotNote').value.trim(), id: String(Date.now()) }, 25000);
+                if (d && d.ok) { setMsg(msg, 'ok', 'Richiesta inviata! Ti avviseremo quando sarà pronta.'); $('dotNote').value = ''; $('dotProd').value = ''; fillDotProd(); await loadDot(false); }
+                else setMsg(msg, 'err', (d && d.error) || 'Richiesta non inviata, riprova.');
+            } catch (err) { setMsg(msg, 'err', 'Richiesta non inviata: controlla la connessione.'); }
+            btn.disabled = false; btn.textContent = 'Invia richiesta';
+        });
+        $('dotMine').addEventListener('click', async e => {
+            const b = e.target.closest('[data-dotcancel]'); if (!b) return;
+            const id = b.closest('.dot-item').dataset.id;
+            if (!confirm('Vuoi annullare questa richiesta?')) return;
+            b.disabled = true;
+            try {
+                const d = await jsonp({ action: 'dotcancel', id, name: session.name, pin: session.pin }, 20000);
+                if (d && d.ok) { toast('Richiesta annullata.'); loadDot(false); } else { toast((d && d.error) || 'Non annullata.'); b.disabled = false; }
+            } catch (err) { toast('Non annullata: controlla la connessione.'); b.disabled = false; }
         });
 
         /* ---------- Procedure (PDF) ---------- */
@@ -1826,6 +1939,7 @@
                 if (t.has('swap')) { loadSwaps(false); loadMyShift(); }
                 if (t.has('proc')) loadProcs(false);
                 if (t.has('rubrica')) loadContacts(false);
+                if (t.has('dot')) loadDot(false);
             }
         });
         if (session) HRN.start();
