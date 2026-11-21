@@ -586,6 +586,40 @@
         .dash-actions .btn { padding: 8px 14px; min-height: 0; }
         @media (max-width: 768px) { .nav-home-container { align-items: stretch; } .dash-actions { justify-content: center; } }
         .emp-grid > .card { margin: 0; }
+        .emp-grid[hidden] { display: none !important; }
+        .emp-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .emp-tile { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 58px; padding: 10px 12px; border: 2px solid #111; border-radius: 16px; background: #fff; color: var(--unieuro-blue-dark); font: inherit; font-weight: 900; font-size: 1rem; text-transform: uppercase; letter-spacing: .4px; cursor: pointer; }
+        .emp-tile span { font-size: 1.4rem; }
+        .emp-tile.active { background: var(--unieuro-orange); color: #fff; border-color: #111; box-shadow: 0 4px 12px rgba(255,102,0,.35); }
+        .emp-tile .tab-badge { background: #dc3545; color: #fff; border-radius: 999px; padding: 2px 9px; font-size: .85rem; }
+        .dot-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .dot-head h2 { margin-bottom: 8px; }
+        .dot-exp { display: flex; gap: 8px; flex-wrap: wrap; }
+        .dot-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 10px 0 14px; }
+        .dot-sub { color: var(--unieuro-orange); text-transform: uppercase; letter-spacing: .5px; font-size: 1rem; margin: 18px 0 8px; }
+        .dot-req { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border: 2px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; background: #fff; }
+        .dot-req-main { min-width: 0; flex: 1 1 320px; }
+        .dot-req-what { margin-top: 4px; font-size: 1.02rem; }
+        .dot-req-meta { font-size: .85rem; color: #5b6573; margin-top: 3px; }
+        .dot-req-act { display: flex; gap: 8px; flex-wrap: wrap; }
+        .badge-done { background: #0047bb; }
+        .dot-tot td { background: #eef2fa; }
+        .dot-months { display: grid; gap: 6px; }
+        .dot-mon { display: grid; grid-template-columns: 44px minmax(0, 1fr) 110px 56px; align-items: center; gap: 10px; font-size: .9rem; }
+        .dot-mon span { font-weight: 800; text-transform: uppercase; color: var(--unieuro-blue-dark); }
+        .dot-mon b { text-align: right; } .dot-mon em { font-style: normal; color: #5b6573; text-align: right; }
+        .dot-bar { height: 14px; background: #eef2fa; border-radius: 7px; overflow: hidden; }
+        .dot-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ff6600, #ff9a4d); border-radius: 7px; }
+        .dp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .dot-hist { display: grid; gap: 6px; max-height: 50vh; overflow: auto; }
+        .dot-hist > div { display: grid; grid-template-columns: 90px minmax(0, 1fr) 80px auto; gap: 8px; align-items: center; border-bottom: 1px solid var(--border); padding: 6px 0; font-size: .9rem; }
+        .dot-hist em { font-style: normal; text-align: right; }
+        @media (max-width: 700px) {
+            .emp-switch { grid-template-columns: 1fr; }
+            .dot-filters { grid-template-columns: 1fr; }
+            .dot-mon { grid-template-columns: 36px minmax(0, 1fr) 84px; } .dot-mon em { display: none; }
+            .dot-hist > div { grid-template-columns: 1fr auto; }
+        }
         @media (min-width: 1000px) {
             .chat-card, .proc-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 24px; align-items: start; }
             .chat-card > h2, .chat-card > p, .proc-card > h2, .proc-card > p { grid-column: 1 / -1; }
@@ -912,7 +946,11 @@
 
             <!-- ============ DIPENDENTI ============ -->
             <section class="tab-panel" id="tab-employees">
-                <div class="emp-grid">
+                <div class="emp-switch" id="empSwitch">
+                    <button type="button" class="emp-tile active" data-esub="main"><span>👥</span>Dipendenti e comunicazioni</button>
+                    <button type="button" class="emp-tile" data-esub="dot"><span>👕</span>Dotazioni personali <b class="tab-badge" id="dotPendBadge" hidden>0</b></button>
+                </div>
+                <div class="emp-grid" data-esec="main">
                 <!-- MESSAGGI AI DIPENDENTI -->
                 <div class="card chat-card">
                     <h2>Messaggi ai dipendenti <span class="count" id="msgCount">0</span></h2>
@@ -980,6 +1018,72 @@
                 </div>
 
                 </div><!-- /emp-grid -->
+                <!-- ============ DOTAZIONI PERSONALI ============ -->
+                <div class="emp-grid" data-esec="dot" hidden>
+                <div class="card">
+                    <div class="dot-head">
+                        <h2>Richieste da gestire <span class="count" id="dotPendCount">0</span></h2>
+                        <button type="button" class="btn btn-small btn-tool" id="dotReload">Aggiorna</button>
+                    </div>
+                    <p class="hint-left">Le richieste che i dipendenti fanno dall'app (Utility → Dotazioni personali). Il dipendente riceve un avviso a ogni cambio di stato. Nella spesa contano le richieste <b>Approvate</b> e <b>Consegnate</b>.</p>
+                    <div id="dotPendList"><div class="chat-empty">Carico…</div></div>
+                </div>
+                <div class="card">
+                    <div class="dot-head">
+                        <h2>Prodotti <span class="count" id="dotProdCount">0</span></h2>
+                        <button type="button" class="btn btn-small btn-success" id="dotProdAdd">+ Nuovo prodotto</button>
+                    </div>
+                    <p class="hint-left">Inserisci qui felpe, polo, giacche, scarpe… con taglie e prezzo. I dipendenti vedono solo i prodotti <b>attivi</b> e non vedono il prezzo.</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Prodotto</th><th>Taglie</th><th>Prezzo</th><th>Max per richiesta</th><th>Stato</th><th>Azioni</th></tr></thead>
+                            <tbody id="dotProdBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="dot-head">
+                        <h2>Resoconto spese divise</h2>
+                        <div class="dot-exp">
+                            <button type="button" class="btn btn-small btn-success" id="dotXlsx">Esporta Excel</button>
+                            <button type="button" class="btn btn-small btn-del" id="dotPdf">Esporta PDF</button>
+                        </div>
+                    </div>
+                    <div class="filters-grid dot-filters">
+                        <div><label for="dotYear">Anno</label><select id="dotYear"></select></div>
+                        <div><label for="dotMonth">Mese</label><select id="dotMonth"></select></div>
+                        <div><label for="dotEmpF">Dipendente</label><select id="dotEmpF"><option value="ALL">Tutti</option></select></div>
+                    </div>
+                    <div class="kpis" id="dotKpis"></div>
+                    <h3 class="dot-sub">Per dipendente</h3>
+                    <p class="hint-left">L'elenco segue la Gestione dipendenti: chi aggiungi compare qui da solo.</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Dipendente</th><th>Richieste</th><th>Pezzi</th><th>Spesa</th><th>Ultima dotazione</th><th>Azioni</th></tr></thead>
+                            <tbody id="dotEmpBody"></tbody>
+                        </table>
+                    </div>
+                    <h3 class="dot-sub">Per prodotto</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Prodotto</th><th>Pezzi</th><th>Spesa</th></tr></thead>
+                            <tbody id="dotByProd"></tbody>
+                        </table>
+                    </div>
+                    <div id="dotMonthsBox">
+                        <h3 class="dot-sub">Mese per mese</h3>
+                        <div class="dot-months" id="dotMonths"></div>
+                    </div>
+                    <h3 class="dot-sub">Tutti i movimenti del periodo <span class="count" id="dotMovCount">0</span></h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Data</th><th>Dipendente</th><th>Prodotto</th><th>Q.tà</th><th>Totale</th><th>Stato</th><th>Azioni</th></tr></thead>
+                            <tbody id="dotMovBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="dotMovPager"></div>
+                </div>
+                </div><!-- /dotazioni -->
             </section>
             <!-- ============ ANDAMENTO NEGOZIO ============ -->
             <section class="tab-panel" id="tab-shop">
@@ -1065,7 +1169,7 @@
     <div id="toast" class="toast" hidden></div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyxjv2PqLfwmVe9tI8sYnv14BdSKuR3ShQa4t3S8_8bpyW1YEz3ZPqaCKhJKNiBcqEE/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYM9cw0hMVDujHDhm4Y1H7DL_tKsV6Q1Jxpx9rKGRz3Y0M9ARMcLf2Qn__5PPJYmY/exec";
 
         // Chiamata verso Google Script: prima via JSONP (tag script), se non va via fetch (piano B)
         function jsonpOnce(params, timeoutMs) {
@@ -1315,6 +1419,9 @@
                     initStatsControls();
                     showTab('requests');
                     if (window.HRN) HRN.start();
+                    let sub = 'main'; try { sub = localStorage.getItem('hr_empsub') || 'main'; } catch (e) {}
+                    showEmpSub(sub === 'dot' ? 'dot' : 'main');
+                    if (sub !== 'dot') loadDot(true);
                 } else if ((a && a.error === 'password') || (b && b.error === 'password')) {
                     setLoginMsg('err', 'Password errata.');
                 } else {
@@ -1430,6 +1537,323 @@
                 };
             });
         }
+
+        /* ================= DOTAZIONI PERSONALI ================= */
+        let dot = { products: [], requests: [], employees: [] }, dotLoaded = false, dotMovPage = 1;
+        const DOT_ST = ['In attesa', 'Approvata', 'Consegnata', 'Rifiutata'];
+        function eur(n) { return (Number(n) || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+        function dotCounts(r) { return r.status === 'Approvata' || r.status === 'Consegnata'; }
+        function dotDate(at) { const m = String(at || '').match(/^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}:\d{2}))?/); return m ? m[3] + '/' + m[2] + '/' + m[1] + (m[4] && m[4] !== '12:00' ? ' ' + m[4] : '') : String(at || ''); }
+        function dotLab(r) { return r.qty + '× ' + r.prod + (r.size ? ' (' + r.size + ')' : ''); }
+        function dotBadgeCls(st) { return st === 'Approvata' ? 'badge-approved' : st === 'Rifiutata' ? 'badge-rejected' : st === 'Consegnata' ? 'badge-done' : 'badge-pending'; }
+        function dotNames() {
+            const names = dot.employees.map(e => e.name);
+            dot.requests.forEach(r => { if (names.indexOf(r.name) < 0) names.push(r.name); });   // ex dipendenti con storico
+            return names;
+        }
+        function dotPeriod() { return { y: $('dotYear').value, m: $('dotMonth').value, emp: $('dotEmpF').value }; }
+        function dotInPeriod(r, P) { P = P || dotPeriod(); return r.at.slice(0, 4) === P.y && (!P.m || r.at.slice(5, 7) === P.m) && (P.emp === 'ALL' || r.name === P.emp); }
+        function dotPeriodLabel(P) { P = P || dotPeriod(); return (P.m ? MESI[+P.m - 1] + ' ' : 'Anno ') + P.y + (P.emp !== 'ALL' ? ' - ' + P.emp : ''); }
+
+        async function loadDot(silent) {
+            try {
+                const d = await jsonp({ action: 'dotadm', password: adminPassword }, 25000);
+                if (d && d.ok) { dot = d; dotLoaded = true; renderDot(); }
+                else if (!silent) toast((d && d.error) || 'Dotazioni non caricate.');
+            } catch (err) { if (!silent) toast('Dotazioni non caricate: controlla la connessione.'); }
+        }
+        function dotFillFilters() {
+            const yNow = String(new Date().getFullYear());
+            const years = [...new Set(dot.requests.map(r => r.at.slice(0, 4)).filter(y => /^\d{4}$/.test(y)).concat([yNow]))].sort().reverse();
+            const ys = $('dotYear'), keepY = ys.value || yNow;
+            ys.innerHTML = years.map(y => `<option>${y}</option>`).join(''); ys.value = years.indexOf(keepY) >= 0 ? keepY : yNow;
+            const ms = $('dotMonth');
+            if (!ms.options.length) ms.innerHTML = '<option value="">Tutto l\'anno</option>' + MESI.map((m, i) => `<option value="${pad2(i + 1)}">${m}</option>`).join('');
+            const es = $('dotEmpF'), keepE = es.value || 'ALL';
+            es.innerHTML = '<option value="ALL">Tutti</option>' + dotNames().map(n => `<option>${esc(n)}</option>`).join('');
+            es.value = keepE; if (es.value !== keepE) es.value = 'ALL';
+        }
+        function renderDot() {
+            dotFillFilters();
+            // da gestire
+            const pend = dot.requests.filter(r => r.status === 'In attesa' || r.status === 'Approvata').sort((a, b) => a.at < b.at ? -1 : 1);
+            const nWait = dot.requests.filter(r => r.status === 'In attesa').length;
+            $('dotPendCount').textContent = pend.length;
+            const bd = $('dotPendBadge'); bd.textContent = nWait; bd.hidden = !nWait;
+            $('dotPendList').innerHTML = pend.length ? pend.map(r => `
+                <div class="dot-req" data-id="${esc(r.id)}">
+                    <div class="dot-req-main">
+                        <b>${esc(r.name)}</b> <span class="badge ${dotBadgeCls(r.status)}">${esc(r.status)}</span>
+                        <div class="dot-req-what">${esc(dotLab(r))} · <b>${eur(r.total)}</b></div>
+                        <div class="dot-req-meta">${dotDate(r.at)}${r.empNote ? ' · “' + esc(r.empNote) + '”' : ''}${r.admNote ? ' · Nota ufficio: ' + esc(r.admNote) : ''}</div>
+                    </div>
+                    <div class="dot-req-act">
+                        ${r.status === 'In attesa' ? '<button type="button" class="btn btn-small btn-success" data-dot="Approvata">Approva</button>' : ''}
+                        <button type="button" class="btn btn-small btn-tool" data-dot="Consegnata">Consegnata</button>
+                        <button type="button" class="btn btn-small btn-danger" data-dot="Rifiutata">Rifiuta</button>
+                    </div>
+                </div>`).join('') : '<div class="chat-empty">Nessuna richiesta da gestire.</div>';
+            // prodotti
+            $('dotProdCount').textContent = dot.products.length;
+            $('dotProdBody').innerHTML = dot.products.length ? dot.products.map(p => `
+                <tr data-pid="${esc(p.id)}">
+                    <td data-label="Prodotto"><strong>${esc(p.name)}</strong>${p.note ? `<div class="dot-req-meta">${esc(p.note)}</div>` : ''}</td>
+                    <td data-label="Taglie">${p.sizesList.length ? esc(p.sizesList.join(' · ')) : '<span class="muted">taglia unica</span>'}</td>
+                    <td data-label="Prezzo"><b>${eur(p.price)}</b></td>
+                    <td data-label="Max per richiesta">${p.max}</td>
+                    <td data-label="Stato">${p.active ? '<span class="badge badge-approved">Attivo</span>' : '<span class="badge badge-rejected">Non visibile</span>'}</td>
+                    <td data-label="Azioni"><div class="row-actions">
+                        <button type="button" class="btn btn-small btn-tool" data-dp="edit">Modifica</button>
+                        <button type="button" class="btn btn-small btn-del" data-dp="toggle">${p.active ? 'Nascondi' : 'Rendi visibile'}</button>
+                        <button type="button" class="btn btn-small btn-danger" data-dp="del">Elimina</button></div></td>
+                </tr>`).join('') : '<tr><td colspan="6" class="empty">Nessun prodotto: premi "+ Nuovo prodotto" (es. Felpa, Polo, Giacca…).</td></tr>';
+            renderDotReport();
+        }
+        function dotStats(P) {
+            P = P || dotPeriod();
+            const inP = dot.requests.filter(r => dotInPeriod(r, P)), cnt = inP.filter(dotCounts);
+            const per = {}; (P.emp === 'ALL' ? dotNames() : [P.emp]).forEach(n => { per[n] = { n, req: 0, pcs: 0, eur: 0, last: '' }; });
+            inP.forEach(r => { const o = per[r.name] || (per[r.name] = { n: r.name, req: 0, pcs: 0, eur: 0, last: '' }); o.req++; });
+            cnt.forEach(r => { const o = per[r.name]; o.pcs += r.qty; o.eur += r.total; if (r.at > o.last) o.last = r.at; });
+            const prod = {}; cnt.forEach(r => { const o = prod[r.prod] || (prod[r.prod] = { n: r.prod, pcs: 0, eur: 0 }); o.pcs += r.qty; o.eur += r.total; });
+            const months = MESI.map((m, i) => ({ m, pcs: 0, eur: 0, i }));
+            dot.requests.filter(r => dotCounts(r) && r.at.slice(0, 4) === P.y && (P.emp === 'ALL' || r.name === P.emp)).forEach(r => { const o = months[+r.at.slice(5, 7) - 1]; if (o) { o.pcs += r.qty; o.eur += r.total; } });
+            const round = v => Math.round(v * 100) / 100;
+            return {
+                list: inP.sort((a, b) => a.at < b.at ? 1 : -1), per: Object.values(per).map(o => (o.eur = round(o.eur), o)),
+                prod: Object.values(prod).map(o => (o.eur = round(o.eur), o)).sort((a, b) => b.eur - a.eur), months: months.map(o => (o.eur = round(o.eur), o)),
+                pcs: cnt.reduce((a, r) => a + r.qty, 0), eur: round(cnt.reduce((a, r) => a + r.total, 0)),
+                wait: inP.filter(r => r.status === 'In attesa').length, rej: inP.filter(r => r.status === 'Rifiutata').length
+            };
+        }
+        function renderDotReport() {
+            const P = dotPeriod(), S = dotStats(P);
+            $('dotKpis').innerHTML = [[eur(S.eur), 'Spesa ' + dotPeriodLabel(P)], [S.pcs, 'Pezzi approvati/consegnati'], [S.list.length, 'Richieste nel periodo'], [S.wait, 'In attesa']]
+                .map(k => `<div class="kpi"><b>${k[0]}</b><span>${esc(k[1])}</span></div>`).join('');
+            $('dotEmpBody').innerHTML = S.per.map(o => `
+                <tr data-emp="${esc(o.n)}">
+                    <td data-label="Dipendente"><strong>${esc(o.n)}</strong></td>
+                    <td data-label="Richieste">${o.req}</td>
+                    <td data-label="Pezzi">${o.pcs}</td>
+                    <td data-label="Spesa"><b>${eur(o.eur)}</b></td>
+                    <td data-label="Ultima dotazione">${o.last ? dotDate(o.last) : '<span class="muted">—</span>'}</td>
+                    <td data-label="Azioni"><div class="row-actions">
+                        <button type="button" class="btn btn-small btn-tool" data-de="detail">Dettaglio</button>
+                        <button type="button" class="btn btn-small btn-success" data-de="add">+ Registra consegna</button></div></td>
+                </tr>`).join('') + `<tr class="dot-tot"><td data-label="Totale"><strong>TOTALE</strong></td><td data-label="Richieste">${S.list.length}</td><td data-label="Pezzi">${S.pcs}</td><td data-label="Spesa"><b>${eur(S.eur)}</b></td><td></td><td></td></tr>`;
+            $('dotByProd').innerHTML = S.prod.length ? S.prod.map(o => `<tr><td data-label="Prodotto"><strong>${esc(o.n)}</strong></td><td data-label="Pezzi">${o.pcs}</td><td data-label="Spesa"><b>${eur(o.eur)}</b></td></tr>`).join('')
+                : '<tr><td colspan="3" class="empty">Nessuna spesa nel periodo.</td></tr>';
+            $('dotMonthsBox').hidden = !!P.m;
+            const maxM = Math.max(1, ...S.months.map(o => o.eur));
+            $('dotMonths').innerHTML = S.months.map(o => `<div class="dot-mon"><span>${o.m.slice(0, 3)}</span><div class="dot-bar"><i style="width:${(o.eur / maxM * 100).toFixed(1)}%"></i></div><b>${eur(o.eur)}</b><em>${o.pcs} pz</em></div>`).join('');
+            $('dotMovCount').textContent = S.list.length;
+            const per = 25, pages = Math.max(1, Math.ceil(S.list.length / per)); dotMovPage = Math.min(dotMovPage, pages);
+            const rows = S.list.slice((dotMovPage - 1) * per, dotMovPage * per);
+            $('dotMovBody').innerHTML = rows.length ? rows.map(r => `
+                <tr data-id="${esc(r.id)}">
+                    <td data-label="Data">${dotDate(r.at)}</td>
+                    <td data-label="Dipendente"><strong>${esc(r.name)}</strong></td>
+                    <td data-label="Prodotto">${esc(r.prod)}${r.size ? ' · ' + esc(r.size) : ''}${r.empNote ? `<div class="dot-req-meta">“${esc(r.empNote)}”</div>` : ''}${r.admNote ? `<div class="dot-req-meta">Ufficio: ${esc(r.admNote)}</div>` : ''}</td>
+                    <td data-label="Q.tà">${r.qty}</td>
+                    <td data-label="Totale">${eur(r.total)}<div class="dot-req-meta">${eur(r.price)} cad.</div></td>
+                    <td data-label="Stato"><span class="badge ${dotBadgeCls(r.status)}">${esc(r.status)}</span></td>
+                    <td data-label="Azioni"><div class="row-actions">
+                        <button type="button" class="btn btn-small btn-tool" data-dm="edit">Modifica</button>
+                        <button type="button" class="btn btn-small btn-danger" data-dm="del">Elimina</button></div></td>
+                </tr>`).join('') : '<tr><td colspan="7" class="empty">Nessun movimento nel periodo.</td></tr>';
+            $('dotMovPager').innerHTML = pages > 1 ? '<div class="pager">' + Array.from({ length: pages }, (_, i) => `<button type="button" class="pg ${i + 1 === dotMovPage ? 'on' : ''}" data-dmp="${i + 1}">${i + 1}</button>`).join('') + '</div>' : '';
+        }
+        ['dotYear', 'dotMonth', 'dotEmpF'].forEach(id => $(id).addEventListener('change', () => { dotMovPage = 1; renderDotReport(); }));
+        $('dotMovPager').addEventListener('click', e => { const b = e.target.closest('[data-dmp]'); if (b) { dotMovPage = +b.dataset.dmp; renderDotReport(); } });
+        $('dotReload').addEventListener('click', () => loadDot(false));
+
+        async function dotCall(params, okMsg) {
+            try {
+                const d = await jsonp(Object.assign({ password: adminPassword }, params), 30000);
+                if (d && d.ok) { if (okMsg) toast(okMsg); await loadDot(true); return true; }
+                toast((d && d.error) || 'Operazione non riuscita.'); return false;
+            } catch (err) { toast('Operazione non riuscita: controlla la connessione.'); return false; }
+        }
+        // cambio di stato veloce (richieste da gestire)
+        $('dotPendList').addEventListener('click', async e => {
+            const b = e.target.closest('[data-dot]'); if (!b) return;
+            const r = dot.requests.find(x => x.id === b.closest('.dot-req').dataset.id); if (!r) return;
+            const st = b.dataset.dot; let note = r.admNote || '';
+            if (st === 'Rifiutata' || st === 'Approvata') {
+                const v = await showModal({ title: (st === 'Rifiutata' ? 'Rifiuta' : 'Approva') + ' – ' + r.name, okText: st === 'Rifiutata' ? 'Rifiuta' : 'Approva', okClass: st === 'Rifiutata' ? 'btn-danger' : 'btn-success',
+                    body: `<p><b>${esc(dotLab(r))}</b> · ${eur(r.total)}</p><label for="dmNote">Nota per il dipendente <span class="muted">(facoltativa)</span></label><input type="text" id="dmNote" maxlength="250" value="${esc(note)}" placeholder="${st === 'Rifiutata' ? 'es. ne hai già ricevuta una quest\'anno' : 'es. arriva entro 10 giorni'}">`,
+                    collect: () => ({ note: $('dmNote').value.trim() }) });
+                if (!v) return; note = v.note;
+            }
+            b.disabled = true;
+            await dotCall({ action: 'dotset', id: r.id, status: st, note }, 'Richiesta ' + st.toLowerCase() + ': il dipendente riceve l\'avviso.');
+        });
+        // prodotti
+        function dotProdForm(p) {
+            p = p || { name: '', sizesList: [], price: '', max: 3, note: '', active: true };
+            return `<label for="dpName">Nome del prodotto</label><input type="text" id="dpName" maxlength="80" value="${esc(p.name)}" placeholder="es. Felpa Unieuro">
+                <label for="dpSizes">Taglie <span class="muted">(separate da virgola; vuoto = taglia unica)</span></label><input type="text" id="dpSizes" value="${esc(p.sizesList.join(', '))}" placeholder="es. S, M, L, XL, XXL">
+                <div class="dp-row"><div><label for="dpPrice">Prezzo unitario (€)</label><input type="number" id="dpPrice" step="0.01" min="0" inputmode="decimal" value="${p.price === '' ? '' : p.price}" placeholder="0,00"></div>
+                <div><label for="dpMax">Massimo per richiesta</label><input type="number" id="dpMax" min="1" max="20" value="${p.max}"></div></div>
+                <label for="dpNote">Nota per i dipendenti <span class="muted">(facoltativa)</span></label><input type="text" id="dpNote" maxlength="200" value="${esc(p.note)}" placeholder="es. 2 all'anno a testa">
+                <label class="selall" style="margin-top:10px"><input type="checkbox" id="dpActive" ${p.active ? 'checked' : ''}> Visibile ai dipendenti</label>`;
+        }
+        async function dotEditProd(p) {
+            const v = await showModal({ title: p ? 'Modifica prodotto' : 'Nuovo prodotto', body: dotProdForm(p), okText: 'Salva', okClass: 'btn-success',
+                collect: () => ({ name: $('dpName').value.trim(), sizes: $('dpSizes').value, price: $('dpPrice').value, max: $('dpMax').value, note: $('dpNote').value.trim(), active: $('dpActive').checked ? '1' : '0' }),
+                validate: d => !d.name ? 'Scrivi il nome del prodotto.' : (d.price === '' || !(Number(d.price) >= 0)) ? 'Scrivi il prezzo (anche 0).' : '' });
+            if (!v) return;
+            await dotCall(Object.assign({ action: 'dotprod', id: p ? p.id : '' }, v), p ? 'Prodotto aggiornato.' : 'Prodotto aggiunto' + (v.active === '1' ? ': i dipendenti ricevono un avviso.' : '.'));
+        }
+        $('dotProdAdd').addEventListener('click', () => dotEditProd(null));
+        $('dotProdBody').addEventListener('click', async e => {
+            const b = e.target.closest('[data-dp]'); if (!b) return;
+            const p = dot.products.find(x => x.id === b.closest('tr').dataset.pid); if (!p) return;
+            if (b.dataset.dp === 'edit') return dotEditProd(p);
+            if (b.dataset.dp === 'toggle') return dotCall({ action: 'dotprod', id: p.id, name: p.name, sizes: p.sizesList.join(','), price: p.price, max: p.max, note: p.note, active: p.active ? '0' : '1' }, p.active ? 'Prodotto nascosto ai dipendenti.' : 'Prodotto visibile ai dipendenti.');
+            if (b.dataset.dp === 'del') {
+                const ok = await showModal({ title: 'Eliminare il prodotto?', body: `<p>Elimini <b>${esc(p.name)}</b> dal catalogo. Le richieste già fatte restano nello storico e nel resoconto.</p>`, okText: 'Elimina', okClass: 'btn-danger' });
+                if (ok) dotCall({ action: 'dotproddel', id: p.id }, 'Prodotto eliminato.');
+            }
+        });
+        // registrare una consegna fatta dall'ufficio
+        async function dotAddFor(name) {
+            if (!dot.products.length) { toast('Prima inserisci almeno un prodotto.'); return; }
+            const opts = dot.products.map(p => `<option value="${esc(p.id)}">${esc(p.name)} – ${eur(p.price)}</option>`).join('');
+            const emps = dot.employees.map(e => `<option ${e.name === name ? 'selected' : ''}>${esc(e.name)}</option>`).join('');
+            const sizeOpts = p => p && p.sizesList.length ? p.sizesList.map(z => `<option>${esc(z)}</option>`).join('') : '<option value="">taglia unica</option>';
+            const promise = showModal({ title: 'Registra consegna', okText: 'Registra', okClass: 'btn-success',
+                body: `<label for="daEmp">Dipendente</label><select id="daEmp">${emps}</select>
+                    <label for="daProd">Prodotto</label><select id="daProd">${opts}</select>
+                    <div class="dp-row"><div><label for="daSize">Taglia</label><select id="daSize">${sizeOpts(dot.products[0])}</select></div>
+                    <div><label for="daQty">Quantità</label><input type="number" id="daQty" min="1" max="99" value="1"></div></div>
+                    <div class="dp-row"><div><label for="daDate">Data</label><input type="date" id="daDate" value="${isoOf(new Date())}"></div>
+                    <div><label for="daSt">Stato</label><select id="daSt"><option>Consegnata</option><option>Approvata</option></select></div></div>
+                    <label for="daPrice">Prezzo unitario (€) <span class="muted">(vuoto = prezzo del catalogo)</span></label><input type="number" id="daPrice" step="0.01" min="0" inputmode="decimal">
+                    <label for="daNote">Nota <span class="muted">(facoltativa)</span></label><input type="text" id="daNote" maxlength="250">`,
+                collect: () => ({ emp: $('daEmp').value, prod: $('daProd').value, size: $('daSize').value, qty: $('daQty').value, date: $('daDate').value, status: $('daSt').value, price: $('daPrice').value, note: $('daNote').value.trim() }),
+                validate: d => !d.emp ? 'Scegli il dipendente.' : !(+d.qty >= 1) ? 'Quantità non valida.' : !/^\d{4}-\d{2}-\d{2}$/.test(d.date) ? 'Scegli la data.' : '' });
+            $('daProd').addEventListener('change', () => { $('daSize').innerHTML = sizeOpts(dot.products.find(p => p.id === $('daProd').value)); });
+            const v = await promise; if (!v) return;
+            await dotCall(Object.assign({ action: 'dotadd', id: String(Date.now()) }, v), 'Consegna registrata.');
+        }
+        $('dotEmpBody').addEventListener('click', e => {
+            const b = e.target.closest('[data-de]'); if (!b) return;
+            const name = b.closest('tr').dataset.emp;
+            if (b.dataset.de === 'add') return dotAddFor(name);
+            const all = dot.requests.filter(r => r.name === name).sort((a, c) => a.at < c.at ? 1 : -1);
+            const tot = all.filter(dotCounts).reduce((a, r) => a + r.total, 0);
+            showModal({ title: 'Dotazioni di ' + name, okText: 'Chiudi', cancelText: 'Indietro',
+                body: `<p>Totale di sempre: <b>${eur(tot)}</b> · ${all.filter(dotCounts).reduce((a, r) => a + r.qty, 0)} pezzi</p>` + (all.length ? '<div class="dot-hist">' + all.map(r => `<div><span>${dotDate(r.at)}</span><b>${esc(dotLab(r))}</b><em>${eur(r.total)}</em><span class="badge ${dotBadgeCls(r.status)}">${esc(r.status)}</span></div>`).join('') + '</div>' : '<p class="muted">Nessuna dotazione.</p>') });
+        });
+        // movimenti: modifica / elimina
+        $('dotMovBody').addEventListener('click', async e => {
+            const b = e.target.closest('[data-dm]'); if (!b) return;
+            const r = dot.requests.find(x => x.id === b.closest('tr').dataset.id); if (!r) return;
+            if (b.dataset.dm === 'del') {
+                const ok = await showModal({ title: 'Eliminare il movimento?', body: `<p>${esc(r.name)} – <b>${esc(dotLab(r))}</b> del ${dotDate(r.at)}.<br>Sparisce anche dal resoconto spese.</p>`, okText: 'Elimina', okClass: 'btn-danger' });
+                if (ok) dotCall({ action: 'dotdel', id: r.id }, 'Movimento eliminato.');
+                return;
+            }
+            const v = await showModal({ title: 'Modifica – ' + r.name, okText: 'Salva', okClass: 'btn-success',
+                body: `<p><b>${esc(dotLab(r))}</b> del ${dotDate(r.at)}</p>
+                    <label for="dmSt">Stato</label><select id="dmSt">${DOT_ST.map(s => `<option ${s === r.status ? 'selected' : ''}>${s}</option>`).join('')}</select>
+                    <label for="dmPrice">Prezzo unitario (€)</label><input type="number" id="dmPrice" step="0.01" min="0" inputmode="decimal" value="${r.price}">
+                    <label for="dmNote2">Nota dell'ufficio</label><input type="text" id="dmNote2" maxlength="250" value="${esc(r.admNote)}">`,
+                collect: () => ({ status: $('dmSt').value, price: $('dmPrice').value, note: $('dmNote2').value.trim() }),
+                validate: d => d.price === '' || !(Number(d.price) >= 0) ? 'Prezzo non valido.' : '' });
+            if (v) dotCall({ action: 'dotset', id: r.id, status: v.status, price: v.price, note: v.note }, 'Movimento aggiornato.');
+        });
+
+        /* ---------- esportazioni ---------- */
+        $('dotXlsx').addEventListener('click', () => {
+            if (!dotLoaded) return;
+            const P = dotPeriod(), S = dotStats(P), lab = dotPeriodLabel(P);
+            const sheets = [
+                { name: 'Per dipendente', header: ['Dipendente', 'Richieste', 'Pezzi', 'Spesa (€)', 'Ultima dotazione'], widths: [30, 12, 10, 14, 18],
+                  rows: S.per.map(o => [o.n, o.req, o.pcs, o.eur, o.last ? dotDate(o.last) : '']).concat([['TOTALE', S.list.length, S.pcs, S.eur, '']]) },
+                { name: 'Per prodotto', header: ['Prodotto', 'Pezzi', 'Spesa (€)'], widths: [34, 10, 14], rows: S.prod.map(o => [o.n, o.pcs, o.eur]).concat([['TOTALE', S.pcs, S.eur]]) }
+            ];
+            if (!P.m) sheets.push({ name: 'Mese per mese', header: ['Mese', 'Pezzi', 'Spesa (€)'], widths: [16, 10, 14], rows: S.months.map(o => [o.m + ' ' + P.y, o.pcs, o.eur]) });
+            sheets.push({ name: 'Movimenti', header: ['Data', 'Dipendente', 'Prodotto', 'Taglia', 'Quantità', 'Prezzo unitario (€)', 'Totale (€)', 'Stato', 'Note dipendente', 'Note ufficio', 'Inserita da'], widths: [16, 26, 26, 8, 10, 16, 12, 12, 30, 30, 18],
+                rows: S.list.map(r => [dotDate(r.at), r.name, r.prod, r.size, r.qty, r.price, r.total, r.status, r.empNote, r.admNote, r.by]) });
+            saveBlobAdmin(buildXlsxMulti(sheets), 'dotazioni_' + lab.replace(/[^A-Za-z0-9]+/g, '_') + '.xlsx');
+        });
+        $('dotPdf').addEventListener('click', () => { if (dotLoaded) saveBlobAdmin(makeDotPdf(), 'dotazioni_' + dotPeriodLabel().replace(/[^A-Za-z0-9]+/g, '_') + '.pdf'); });
+        function makeDotPdf() {
+            const P = dotPeriod(), S = dotStats(P);
+            const PW = 842, PH = 595, M = 30;
+            const mc = document.createElement('canvas').getContext('2d');
+            const tw = (s, sz, b) => { mc.font = (b ? 'bold ' : '') + sz + 'px Arial, Helvetica, sans-serif'; return mc.measureText(s).width; };
+            const clean = s => String(s == null ? '' : s).replace(/[–—]/g, '-').replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/×/g, 'x').replace(/€/g, '\x80').replace(/[^\x20-\xff]/g, '?');
+            const wrap = (s, w, sz, b) => { s = clean(s); const out = []; let line = ''; s.split(/\s+/).forEach(word => { const t = line ? line + ' ' + word : word; if (tw(t, sz, b) <= w || !line) line = t; else { out.push(line); line = word; } }); if (line) out.push(line); return out.length ? out : ['']; };
+            const pages = []; let ops, y;
+            const newPage = () => { ops = []; pages.push(ops); y = M; };
+            const esc2 = s => clean(s).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+            const rgb = h => [1, 3, 5].map(i => (parseInt(h.slice(i, i + 2), 16) / 255).toFixed(3)).join(' ');
+            const rect = (x, yy, w, h, fill) => ops.push(rgb(fill) + ' rg ' + x.toFixed(1) + ' ' + (PH - yy - h).toFixed(1) + ' ' + w.toFixed(1) + ' ' + h.toFixed(1) + ' re f');
+            const text = (s, x, yy, sz, b, col, align, w) => { s = clean(s); let xx = x; if (align === 'r') xx = x + w - tw(s, sz, b); else if (align === 'c') xx = x + (w - tw(s, sz, b)) / 2; ops.push('BT /' + (b ? 'F2' : 'F1') + ' ' + sz + ' Tf ' + rgb(col || '#111111') + ' rg ' + xx.toFixed(1) + ' ' + (PH - yy - sz * 0.82).toFixed(1) + ' Td (' + esc2(s) + ') Tj ET'); };
+            const ensure = h => { if (y + h > PH - M - 14) newPage(); };
+            function table(cols, rows) {
+                const sz = 9, lh = 11.5, total = cols.reduce((a, c) => a + c.w, 0), sc = (PW - 2 * M) / total, cw = cols.map(c => c.w * sc);
+                const header = () => { ensure(24); rect(M, y, PW - 2 * M, 18, '#002b66'); let x = M; cols.forEach((c, i) => { text(c.t, x + 4, y + 4.5, sz, true, '#ffffff', c.a, cw[i] - 8); x += cw[i]; }); y += 18; };
+                header();
+                rows.forEach((r, ri) => {
+                    const cells = r.cells.map((v, i) => wrap(v, cw[i] - 8, sz, r.bold).slice(0, 3));
+                    const h = Math.max.apply(null, cells.map(c => c.length)) * lh + 6;
+                    if (y + h > PH - M - 14) { newPage(); header(); }
+                    if (r.fill) rect(M, y, PW - 2 * M, h, r.fill); else if (ri % 2) rect(M, y, PW - 2 * M, h, '#f3f5f9');
+                    let x = M; cells.forEach((lines, i) => { lines.forEach((ln, k) => text(ln, x + 4, y + 3 + k * lh, sz, r.bold, '#111111', cols[i].a, cw[i] - 8)); x += cw[i]; });
+                    y += h;
+                });
+                y += 8;
+            }
+            const title = t => { ensure(40); text(t, M, y, 12, true, '#002b66'); y += 18; };
+            newPage();
+            rect(0, 0, PW, 54, '#002b66'); rect(0, 54, PW, 3, '#ff6600');
+            text('HR Orion - Resoconto dotazioni personali', M, 14, 20, true, '#ffffff');
+            text(nowLabel().replace('Stampato il', 'Generato il'), M, 38, 9, false, '#dbe4f5');
+            y = 70; text('Periodo: ' + dotPeriodLabel(P) + '  -  nella spesa contano le richieste Approvate e Consegnate', M, y, 9.5, false, '#333333'); y += 20;
+            const k = [[eur(S.eur), 'Spesa'], [String(S.pcs), 'Pezzi'], [String(S.list.length), 'Richieste'], [String(S.wait), 'In attesa']];
+            const kw = (PW - 2 * M - 3 * 10) / 4;
+            k.forEach((it, i) => { const x = M + i * (kw + 10); rect(x, y, kw, 44, '#eef2fa'); text(it[0], x, y + 6, 18, true, '#ff6600', 'c', kw); text(it[1], x, y + 30, 9, true, '#002b66', 'c', kw); });
+            y += 58;
+            title('Spesa per dipendente');
+            table([{ t: 'Dipendente', w: 34 }, { t: 'Richieste', w: 10, a: 'r' }, { t: 'Pezzi', w: 10, a: 'r' }, { t: 'Spesa', w: 14, a: 'r' }, { t: 'Ultima dotazione', w: 16 }],
+                S.per.map(o => ({ cells: [o.n, String(o.req), String(o.pcs), eur(o.eur), o.last ? dotDate(o.last) : '-'] })).concat([{ cells: ['TOTALE', String(S.list.length), String(S.pcs), eur(S.eur), ''], bold: true, fill: '#dbe4f5' }]));
+            title('Spesa per prodotto');
+            table([{ t: 'Prodotto', w: 40 }, { t: 'Pezzi', w: 10, a: 'r' }, { t: 'Spesa', w: 14, a: 'r' }], (S.prod.length ? S.prod.map(o => ({ cells: [o.n, String(o.pcs), eur(o.eur)] })) : [{ cells: ['Nessuna spesa nel periodo', '', ''] }]));
+            if (!P.m) { title('Mese per mese - ' + P.y); table([{ t: 'Mese', w: 30 }, { t: 'Pezzi', w: 10, a: 'r' }, { t: 'Spesa', w: 14, a: 'r' }], S.months.map(o => ({ cells: [o.m, String(o.pcs), eur(o.eur)] }))); }
+            title('Movimenti (' + S.list.length + ')');
+            table([{ t: 'Data', w: 12 }, { t: 'Dipendente', w: 22 }, { t: 'Prodotto', w: 24 }, { t: 'Q.ta', w: 6, a: 'r' }, { t: 'Totale', w: 11, a: 'r' }, { t: 'Stato', w: 11 }, { t: 'Note', w: 30 }],
+                S.list.map(r => ({ cells: [dotDate(r.at), r.name, r.prod + (r.size ? ' (' + r.size + ')' : ''), String(r.qty), eur(r.total), r.status, [r.empNote, r.admNote].filter(Boolean).join(' / ') || '-'] })));
+            pages.forEach((p, i) => { ops = p; text('Pagina ' + (i + 1) + ' di ' + pages.length, PW - M - 100, PH - 22, 8, false, '#666666', 'r', 100); text('HR Orion', M, PH - 22, 8, false, '#666666'); });
+            const enc = s => { const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i) & 255; return u; };
+            const parts = [], offs = []; let len = 0;
+            const add = s => { const u = enc(s); parts.push(u); len += u.length; };
+            const obj = (n, body) => { offs[n] = len; add(n + ' 0 obj\n' + body + '\nendobj\n'); };
+            const np = pages.length, first = 5;
+            add('%PDF-1.4\n');
+            obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+            obj(2, '<< /Type /Pages /Kids [' + pages.map((_, i) => (first + i * 2) + ' 0 R').join(' ') + '] /Count ' + np + ' >>');
+            obj(3, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+            obj(4, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+            pages.forEach((p, i) => { const pn = first + i * 2, cn = pn + 1, stream = p.join('\n'); obj(pn, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + cn + ' 0 R >>'); obj(cn, '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream'); });
+            const n = first + np * 2, xr = len;
+            let t = 'xref\n0 ' + n + '\n0000000000 65535 f \n';
+            for (let i = 1; i < n; i++) t += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+            add(t + 'trailer\n<< /Size ' + n + ' /Root 1 0 R >>\nstartxref\n' + xr + '\n%%EOF');
+            return new Blob(parts, { type: 'application/pdf' });
+        }
+
+        /* sottocartelle della scheda Dipendenti */
+        function showEmpSub(k) {
+            try { localStorage.setItem('hr_empsub', k); } catch (e) {}
+            document.querySelectorAll('#empSwitch [data-esub]').forEach(b => b.classList.toggle('active', b.dataset.esub === k));
+            document.querySelectorAll('#tab-employees [data-esec]').forEach(s => { s.hidden = s.dataset.esec !== k; });
+            if (k === 'dot') loadDot(dotLoaded);
+        }
+        $('empSwitch').addEventListener('click', e => { const b = e.target.closest('[data-esub]'); if (b) showEmpSub(b.dataset.esub); });
 
         /* ================= RICHIESTE ================= */
         function sortById(list) { return list.sort(byIdDesc); }
@@ -3809,7 +4233,7 @@
             auth: () => adminPassword ? { password: adminPassword, user: adminUser } : null,
             list: 'avvisiadm', sub: 'pushsubadm', unsub: 'pushunsubadm',
             btn: document.getElementById('hrnBell'), inst: document.getElementById('hrnInstall'),
-            onNew: () => { loadAll(true); }
+            onNew: items => { loadAll(true); if (dotLoaded || items.some(x => x.type === 'dot')) loadDot(true); }
         });
     </script>
 
